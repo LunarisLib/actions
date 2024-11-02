@@ -85,4 +85,4 @@ runs:
       uses: actions/upload-artifact@main
       with:
         name: build_${{ runner.os }}
-        path: ${{ runner.workspace }}/executables/
+        path: ${{ runner.workspace }}/
