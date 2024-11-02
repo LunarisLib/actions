@@ -43,12 +43,24 @@ runs:
         WORK_PATH: ${{ inputs.project_path }}
       run: |
         cd $WORK_PATH
+        
+        echo "CREATING BUILD PATH $BUILD_DIR"
         mkdir $BUILD_DIR
+
+        echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}/executables"
+        mkdir -p ${{ runner.workspace }}/executables;
+
+        echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}/logs"
+        mkdir -p ${{ runner.workspace }}/logs;
+
+        echo "Preparing CMake..."
+
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR 
+                
+        echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
-            mkdir ${{ runner.workspace }}/executables;
             cp $BUILD_DIR/*/* ${{ runner.workspace }}/executables;
         else 
             cmake --build $BUILD_DIR > runner.txt;
@@ -62,6 +74,7 @@ runs:
 
         cp runner.txt ${{ runner.workspace }}/logs  
         
+        echo "End!"
     - name: Save logs
       uses: actions/upload-artifact@main
       with:
