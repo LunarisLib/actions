@@ -48,18 +48,21 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE;
+            mkdir {{ runner.workspace }}/executables
+            cp $BUILD_DIR/*/* {{ runner.workspace }}/executables
         else 
             cmake --build $BUILD_DIR;
-        fi
-                
-        ls -R -a > paths.txt
-        
+            cat test.txt | grep Built | awk '{print $NF}' > execs.txt
+            for file in $(<execs.txt); do
+              cp "$BUILD_DIR/$file" {{ runner.workspace }}/executables;
+            done
+        fi                
+        ls -R -a > paths.txt        
     - name: Save experiment
       uses: actions/upload-artifact@main
       with:
         name: stuff_${{ runner.os }}
-        path: |
-          ${{ runner.workspace }}/*
+        path: ${{ runner.workspace }}/executables
 
     #- name: Build with CMake
     #  uses: ashutoshvarma/action-cmake-build@master
