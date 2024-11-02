@@ -27,72 +27,68 @@ runs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
+
+    #- name: Setup Ninja
+    #  uses: ashutoshvarma/setup-ninja@master
       
     - name: Build Cmake manually
       shell: bash
       env:
-        BUILD_DIR: ${{ runner.workspace }}/build
-        TEMPORARY_DIR: ${{ runner.workspace }}/build/_temp621
-        OUTPUT_DIRECTORY: ${{ runner.workspace }}/built_executables
+        BUILD_DIR: build
+        OUTPUT_DIR: built_executables
+        LOGS_DIR: logs
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
         cd $WORK_PATH
         
-        echo "CREATING BUILD PATH $BUILD_DIR"
-        mkdir $BUILD_DIR
-        
-        echo "CREATING PATH FOR EXECUTABLES AT $TEMPORARY_DIR/executables";
-        mkdir -p $TEMPORARY_DIR/executables;
+        if [[ ${{ runner.os }} == "Windows" ]]; then
+            P_BUILD=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$BUILD_DIR
+            P_EXECS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$OUTPUT_DIR
+            P_LOGGS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$LOGS_DIR
+        else
+            P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
+            P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
+            P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
+        fi        
 
-        echo "CREATING PATH FOR LOGS AT $TEMPORARY_DIR/logs";
-        mkdir -p $TEMPORARY_DIR/logs;
-
-        echo "======================================"
-        ls -l
-        echo "======================================"
+        echo "Creating paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
+        mkdir -p $P_BUILD;
+        mkdir -p $P_EXECS;
+        mkdir -p $P_LOGGS;
 
         echo "Preparing CMake..."
-        
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > $TEMPORARY_DIR/logs/cmake_init.txt
-                
-        echo "======================================"
-        ls -l
-        echo "======================================"
+
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -S . -B "$P_BUILD"
                 
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
-            
-            ls -R -l
+            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
 
-            cp runner.txt $TEMPORARY_DIR\logs
-            cp $BUILD_DIR\\Release\\*.exe $TEMPORARY_DIR\\executables\\ | :;
-            cp $BUILD_DIR\\Debug\\*.exe $TEMPORARY_DIR\\executables\\ | :;
+            cp $P_BUILD/*/*.exe "$P_EXECS/";
         else 
-            cmake --build $BUILD_DIR > runner.txt;
-            
-            ls -R -l
-
+            cmake --build $P_BUILD > runner.txt;
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
-            cp execs.txt $TEMPORARY_DIR/logs  
-            cp runner.txt $TEMPORARY_DIR/logs
+            cp execs.txt ${{ runner.workspace }}/logs  
 
             for file in $(<execs.txt); do
-              cp "$BUILD_DIR/$file" $TEMPORARY_DIR/executables/;
+              cp "$P_BUILD/$file" "$P_EXECS/";
             done;
-        fi  
+        fi
+
+        cp runner.txt "$P_LOGGS/"
         
         echo "End!"
- #   - name: Save logs
- #      uses: actions/upload-artifact@main
- #      with:
- #        name: logs_${{ runner.os }}
- #        path: ./build/_temp621/logs/
+
+#    - name: Save logs
+#      uses: actions/upload-artifact@main
+#      with:
+#        name: logs_${{ runner.os }}
+#        path: ${{ runner.workspace }}/logs/
 
     - name: Save build
       uses: actions/upload-artifact@main
       with:
         name: build_${{ runner.os }}
-        path: ${{ runner.workspace }}
+        path: ${{ runner.workspace }}/
