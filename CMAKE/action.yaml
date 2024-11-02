@@ -31,8 +31,9 @@ runs:
     - name: Build Cmake manually
       shell: bash
       env:
-        BUILD_DIR: ./build
-        OUTPUT_DIRECTORY: ./built_executables
+        BUILD_DIR: ${{ runner.workspace }}/build
+        TEMPORARY_DIR: ${{ runner.workspace }}/build/_temp621
+        OUTPUT_DIRECTORY: ${{ runner.workspace }}/built_executables
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
@@ -41,32 +42,24 @@ runs:
         echo "CREATING BUILD PATH $BUILD_DIR"
         mkdir $BUILD_DIR
         
-        if [[ ${{ runner.os }} == "Windows" ]]; then 
-          echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}\executables";
-          mkdir -p ${{ runner.workspace }}\executables;
+        echo "CREATING PATH FOR EXECUTABLES AT $TEMPORARY_DIR/executables";
+        mkdir -p $TEMPORARY_DIR/executables;
 
-          echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}\logs";
-          mkdir -p ${{ runner.workspace }}\logs;
-        else
-          echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}/executables";
-          mkdir -p ${{ runner.workspace }}/executables;
+        echo "CREATING PATH FOR LOGS AT $TEMPORARY_DIR/logs";
+        mkdir -p $TEMPORARY_DIR/logs;
 
-          echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}/logs";
-          mkdir -p ${{ runner.workspace }}/logs;
-        fi
-
+        echo "======================================"
         ls -l
+        echo "======================================"
 
         echo "Preparing CMake..."
         
-        if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > ${{ runner.workspace }}\logs\cmake_init.txt
-        else
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > ${{ runner.workspace }}/logs/cmake_init.txt
-        fi
-        
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > $TEMPORARY_DIR/logs/cmake_init.txt
+                
+        echo "======================================"
         ls -l
-        
+        echo "======================================"
+                
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
@@ -74,28 +67,29 @@ runs:
             
             ls -R -l
 
-            cp runner.txt ${{ runner.workspace }}\logs
-            cp $BUILD_DIR\*\*.exe ${{ runner.workspace }}\executables\;
+            cp runner.txt $TEMPORARY_DIR\logs
+            cp $BUILD_DIR/Release/*.exe $TEMPORARY_DIR/executables/ | :;
+            cp $BUILD_DIR/Debug/*.exe $TEMPORARY_DIR/executables/ | :;
         else 
             cmake --build $BUILD_DIR > runner.txt;
             
             ls -R -l
 
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
-            cp execs.txt ${{ runner.workspace }}/logs  
-            cp runner.txt ${{ runner.workspace }}/logs
+            cp execs.txt $TEMPORARY_DIR/logs  
+            cp runner.txt $TEMPORARY_DIR/logs
 
             for file in $(<execs.txt); do
-              cp "$BUILD_DIR/$file" ${{ runner.workspace }}/executables/;
+              cp "$BUILD_DIR/$file" $TEMPORARY_DIR/executables/;
             done;
         fi  
         
         echo "End!"
-    - name: Save logs
-      uses: actions/upload-artifact@main
-      with:
-        name: logs_${{ runner.os }}
-        path: ${{ runner.workspace }}/logs/
+ #   - name: Save logs
+ #      uses: actions/upload-artifact@main
+ #      with:
+ #        name: logs_${{ runner.os }}
+ #        path: ./build/_temp621/logs/
 
     - name: Save build
       uses: actions/upload-artifact@main
