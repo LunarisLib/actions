@@ -44,6 +44,7 @@ runs:
         cd $WORK_PATH
         mkdir $BUILD_DIR
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -S . -B $BUILD_DIR 
+        cmake --build $BUILD_DIR
         ls -R -a > paths.txt
         
     - name: Save experiment
