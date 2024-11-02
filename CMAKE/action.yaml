@@ -32,6 +32,7 @@ runs:
       uses: ashutoshvarma/setup-ninja@master
       
     - name: Build Cmake manually
+      shell: bash
       env:
         BUILD_DIR: ./build
         CONFIGURE_OPTIONS: -G Ninja
