@@ -1,0 +1,35 @@
+# OLD IDEA PROJECT I WAS DUMMER BACK THEN IDK
+#
+#name: 'Experiment'
+#description: 'Just messing around'
+#inputs:
+##  repository:
+##    description: 'Repository name with owner. For example, actions/checkout'
+##    default: ${{ github.repository }}
+#  task:
+#    description: 'Which task do you need? [VS: Visual Studio auto build, CM: CMake auto build, CMA: CMake auto build + Allegro 5, PUBLISH: Auto publish an auto build]
+#  banana:
+#    description: 'Banana nana'
+#    default: 'not banana'
+#outputs:
+#  is_banana:
+#    description: 'is it banana?'
+#runs:
+#  using: "composite"
+#  steps:
+#  
+#    - if: ${{ inputs.task == 'VS'}}
+#      uses: ./.github/workflows/build_vs.yml
+#      id: 'Visual Studio Build'
+#      
+#    - if: ${{ inputs.task == 'CM'}}
+#      uses: ./.github/workflows/build_cmake.yml
+#      id: 'CMake Build'
+#      
+#    - if: ${{ inputs.task == 'CMA'}}
+#      uses: ./.github/workflows/build_cmake_allegro5.yml
+#      id: 'CMake + Allegro 5 Build'
+#      
+#    - if: ${{ inputs.task == 'PUBLISH'}}
+#      uses: ./.github/workflows/publish_release.yml
+#      id: 'Publish release'

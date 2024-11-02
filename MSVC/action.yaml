@@ -1,0 +1,40 @@
+name: 'MSVC ready reusable action made by Lohk'
+description: 'Made to build Microsoft Visual Studio projects with MSVC, nuget and submodules as easy as possible.'
+inputs:
+  build_configuration:
+    description: 'Release or Debug?'
+    required: false
+    default: 'Release'
+  checkout:
+    description: 'Should this checkout the project automagically?'
+    required: false
+    default: 'false'
+  
+runs:
+  using: composite
+  steps:
+    - name: Checkout if requested
+      if: ${{ inputs.checkout == 'true' }}
+      uses: actions/checkout@main
+      with:
+        submodules: 'true'
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: powershell
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build project(s)
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: powershell
+      run: msbuild /m /p:OutDir=${{ runner.workspace }}\build_out\ /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Save build folder as artifact
+      uses: actions/upload-artifact@main
+      with:
+        name: build
+        path: ${{ runner.workspace }}/build_out/*.exe
+        

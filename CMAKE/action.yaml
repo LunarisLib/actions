@@ -1,0 +1,73 @@
+name: 'CMake ready reusable action made by Lohk'
+description: 'Made to build CMake projects for Linux, Windows and/or MacOS'
+inputs:
+  build_configuration:
+    description: 'Release or Debug?'
+    required: false
+    default: 'Release'
+  checkout:
+    description: 'Should this checkout the project automagically?'
+    required: false
+    default: 'false'
+  project_path:
+    description: 'Different path to work on?'
+    required: false
+  
+runs:
+  using: composite
+  steps:
+    - name: Checkout if requested
+      if: ${{ inputs.checkout == 'true' }}
+      uses: actions/checkout@main
+      with:
+        submodules: 'true'
+        
+    # self test if it is windows
+    - name: Setup MSVC if needed
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64
+
+    - name: Setup Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      
+    - name: Build Cmake manually
+      env:
+        BUILD_DIR: ./build
+        CONFIGURE_OPTIONS: -G Ninja
+        #cc: ${{ matrix.config.cc }} # -DCMAKE_C_COMPILER=$CC -- instead, set in your project! (like probably "set(CMAKE_C_COMPILER gcc CACHE STRING "C compiler" FORCE)")
+        #cxx: ${{ matrix.config.cxx }} # -DCMAKE_CXX_COMPILER=$CXX -- instead, set in your project! (like probably "set(CMAKE_CXX_COMPILER g++ CACHE STRING "C++ compiler" FORCE)")
+        BUILD_TYPE: ${{ inputs.build_configuration }}
+        WORK_PATH: ${{ inputs.project_path }}
+      run: |
+        cd $WORK_PATH
+        mkdir $BUILD_DIR
+        cmake $CONFIGURE_OPTIONS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -S . -B $BUILD_DIR 
+        ls -R -a > paths.txt
+        
+    - name: Save experiment
+      uses: actions/upload-artifact@main
+      with:
+        name: stuff
+        path: |
+          ./paths.txt
+          ./build/*
+
+    #- name: Build with CMake
+    #  uses: ashutoshvarma/action-cmake-build@master
+    #  with:
+    #    build-dir: ${{ runner.workspace }}/build
+    #    cc: ${{ matrix.config.cc }}
+    #    cxx: ${{ matrix.config.cxx }}
+    #    configure-options: -G Ninja
+    #    build-type: ${{ inputs.build_configuration }}
+    #
+    #- name: "Rename for Artifact"
+    #  run: mv ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter${{ matrix.config.ext }} ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter_${{ matrix.config.name }}${{ matrix.config.ext }}
+    #
+    #- name: Save build folder as artifact
+    #  uses: actions/upload-artifact@main
+    #  with:
+    #    name: release_${{ matrix.config.name }}
+    #    path: ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter_${{ matrix.config.name }}${{ matrix.config.ext }}
+        

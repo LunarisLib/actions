@@ -1,0 +1,24 @@
+name: CMake action build example test
+
+on:
+#  push:
+#    branches:
+#      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest ] #, macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:  
+      - name: Build
+        uses: LunarisLib/actions/CMAKE
+        with:
+          checkout: 'true'
+          project_path: ./Examples/CMake_project/
+
+
+    
