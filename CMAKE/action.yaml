@@ -49,7 +49,7 @@ runs:
     - name: Save experiment
       uses: actions/upload-artifact@main
       with:
-        name: stuff
+        name: stuff_${{ runner.os }}
         path: |
           ${{ runner.workspace }}/*
 
