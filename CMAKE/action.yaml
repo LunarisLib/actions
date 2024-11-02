@@ -27,17 +27,11 @@ runs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
-
-    #- name: Setup Ninja
-    #  uses: ashutoshvarma/setup-ninja@master
       
     - name: Build Cmake manually
       shell: bash
       env:
         BUILD_DIR: ./build
-        #CONFIGURE_OPTIONS: 
-        #cc: ${{ matrix.config.cc }} # -DCMAKE_C_COMPILER=$CC -- instead, set in your project! (like probably "set(CMAKE_C_COMPILER gcc CACHE STRING "C compiler" FORCE)")
-        #cxx: ${{ matrix.config.cxx }} # -DCMAKE_CXX_COMPILER=$CXX -- instead, set in your project! (like probably "set(CMAKE_CXX_COMPILER g++ CACHE STRING "C++ compiler" FORCE)")
         OUTPUT_DIRECTORY: ./built_executables
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
@@ -46,33 +40,55 @@ runs:
         
         echo "CREATING BUILD PATH $BUILD_DIR"
         mkdir $BUILD_DIR
+        
+        if [[ ${{ runner.os }} == "Windows" ]]; then 
+          echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}\executables";
+          mkdir -p ${{ runner.workspace }}\executables;
 
-        echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}/executables"
-        mkdir -p ${{ runner.workspace }}/executables;
+          echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}\logs";
+          mkdir -p ${{ runner.workspace }}\logs;
+        else
+          echo "CREATING PATH FOR EXECUTABLES AT ${{ runner.workspace }}/executables";
+          mkdir -p ${{ runner.workspace }}/executables;
 
-        echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}/logs"
-        mkdir -p ${{ runner.workspace }}/logs;
+          echo "CREATING PATH FOR LOGS AT ${{ runner.workspace }}/logs";
+          mkdir -p ${{ runner.workspace }}/logs;
+        fi
+
+        ls -l
 
         echo "Preparing CMake..."
-
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR 
-                
+        
+        if [[ ${{ runner.os }} == "Windows" ]]; then 
+            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > ${{ runner.workspace }}\logs\cmake_init.txt
+        else
+            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR > ${{ runner.workspace }}/logs/cmake_init.txt
+        fi
+        
+        ls -l
+        
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
-            cp $BUILD_DIR/*/*.exe ${{ runner.workspace }}/executables/;
+            
+            ls -R -l
+
+            cp runner.txt ${{ runner.workspace }}\logs
+            cp $BUILD_DIR\*\*.exe ${{ runner.workspace }}\executables\;
         else 
             cmake --build $BUILD_DIR > runner.txt;
+            
+            ls -R -l
+
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
             cp execs.txt ${{ runner.workspace }}/logs  
+            cp runner.txt ${{ runner.workspace }}/logs
 
             for file in $(<execs.txt); do
               cp "$BUILD_DIR/$file" ${{ runner.workspace }}/executables/;
             done;
-        fi
-
-        cp runner.txt ${{ runner.workspace }}/logs  
+        fi  
         
         echo "End!"
     - name: Save logs
@@ -85,4 +101,4 @@ runs:
       uses: actions/upload-artifact@main
       with:
         name: build_${{ runner.os }}
-        path: ${{ runner.workspace }}/
+        path: ${{ runner.workspace }}
