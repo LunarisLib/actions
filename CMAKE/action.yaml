@@ -61,14 +61,14 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
-            cp $BUILD_DIR/**/*.exe ${{ runner.workspace }}/executables;
+            cp $BUILD_DIR/**/*.exe ${{ runner.workspace }}/executables/;
         else 
             cmake --build $BUILD_DIR > runner.txt;
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
             cp execs.txt ${{ runner.workspace }}/logs  
 
             for file in $(<execs.txt); do
-              cp "$BUILD_DIR/$file" ${{ runner.workspace }}/executables;
+              cp "$BUILD_DIR/$file" ${{ runner.workspace }}/executables/;
             done;
         fi
 
@@ -79,10 +79,10 @@ runs:
       uses: actions/upload-artifact@main
       with:
         name: logs_${{ runner.os }}
-        path: ${{ runner.workspace }}/logs
+        path: ${{ runner.workspace }}/logs/
 
     - name: Save build
       uses: actions/upload-artifact@main
       with:
         name: build_${{ runner.os }}
-        path: ${{ runner.workspace }}/executables
+        path: ${{ runner.workspace }}/executables/
