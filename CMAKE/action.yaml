@@ -38,13 +38,14 @@ runs:
         #CONFIGURE_OPTIONS: 
         #cc: ${{ matrix.config.cc }} # -DCMAKE_C_COMPILER=$CC -- instead, set in your project! (like probably "set(CMAKE_C_COMPILER gcc CACHE STRING "C compiler" FORCE)")
         #cxx: ${{ matrix.config.cxx }} # -DCMAKE_CXX_COMPILER=$CXX -- instead, set in your project! (like probably "set(CMAKE_CXX_COMPILER g++ CACHE STRING "C++ compiler" FORCE)")
+        OUTPUT_DIRECTORY: ./built_executables
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
         cd $WORK_PATH
         mkdir $BUILD_DIR
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -S . -B $BUILD_DIR 
-        cmake --build $BUILD_DIR
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR 
+        cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE
         ls -R -a > paths.txt
         
     - name: Save experiment
