@@ -45,7 +45,13 @@ runs:
         cd $WORK_PATH
         mkdir $BUILD_DIR
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR 
-        cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE
+
+        if [[ ${{ runner.os }} == "Windows" ]]; then 
+            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE;
+        else 
+            cmake --build $BUILD_DIR;
+        fi
+                
         ls -R -a > paths.txt
         
     - name: Save experiment
