@@ -51,8 +51,7 @@ runs:
       with:
         name: stuff
         path: |
-          ./paths.txt
-          ./build/*
+          ${{ runner.workspace }}/*
 
     #- name: Build with CMake
     #  uses: ashutoshvarma/action-cmake-build@master
