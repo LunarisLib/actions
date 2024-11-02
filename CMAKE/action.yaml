@@ -10,8 +10,16 @@ inputs:
     required: false
     default: 'false'
   project_path:
-    description: 'Different path to work on?'
+    description: 'Project path to work on?'
     required: false
+  upload_logs:
+    description: 'Upload logs?'
+    required: false
+    default: 'false'
+  artifact_name:
+    description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs'
+    required: true
+    
   
 runs:
   using: composite
@@ -34,9 +42,9 @@ runs:
     - name: Build Cmake manually
       shell: bash
       env:
-        BUILD_DIR: build
-        OUTPUT_DIR: built_executables
-        LOGS_DIR: logs
+        BUILD_DIR: build/${{ inputs.artifact_name }}
+        OUTPUT_DIR: built_executables/${{ inputs.artifact_name }}
+        LOGS_DIR: logs/${{ inputs.artifact_name }}
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
@@ -50,9 +58,14 @@ runs:
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
-        fi        
+        fi    
+        
+        echo "Cleaning up paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
+        rm -rf $P_BUILD;
+        rm -rf $P_EXECS;
+        rm -rf $P_LOGGS;
 
-        echo "Creating paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
+        echo "(Re)Creating paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
         mkdir -p $P_BUILD;
         mkdir -p $P_EXECS;
         mkdir -p $P_LOGGS;
@@ -65,10 +78,13 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
+            cat runner.txt
 
             cp $P_BUILD/*/*.exe "$P_EXECS/";
         else 
             cmake --build $P_BUILD > runner.txt;
+            cat runner.txt
+
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
             cp execs.txt ${{ runner.workspace }}/logs  
 
@@ -81,14 +97,23 @@ runs:
         
         echo "End!"
 
-#    - name: Save logs
-#      uses: actions/upload-artifact@main
-#      with:
-#        name: logs_${{ runner.os }}
-#        path: ${{ runner.workspace }}/logs/
-
     - name: Save build
       uses: actions/upload-artifact@main
       with:
-        name: build_${{ runner.os }}
-        path: ${{ runner.workspace }}/
+        name: ${{ inputs.artifact_name }}
+        path: ${{ runner.workspace }}/built_executables/${{ inputs.artifact_name }}/
+
+    - if: ${{ inputs.upload_logs == 'true' }}
+      name: Save logs
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ inputs.artifact_name }}_logs
+        path: ${{ runner.workspace }}/logs/${{ inputs.artifact_name }}/
+        
+
+# Use only in case of debug:
+#    - name: Save build
+#      uses: actions/upload-artifact@main
+#      with:
+#        name: build_${{ runner.os }}
+#        path: ${{ runner.workspace }}/

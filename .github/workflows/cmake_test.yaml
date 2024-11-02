@@ -19,6 +19,7 @@ jobs:
         with:
           checkout: 'true'
           project_path: ./Examples/CMake_project/
+          artifact_name: ${{ matrix.os }}_PROJECT
 
 
     
