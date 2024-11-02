@@ -61,7 +61,7 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
-            cp $BUILD_DIR/*/* ${{ runner.workspace }}/executables;
+            cp $BUILD_DIR/**/*.exe ${{ runner.workspace }}/executables;
         else 
             cmake --build $BUILD_DIR > runner.txt;
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
