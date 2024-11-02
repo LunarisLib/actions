@@ -28,14 +28,14 @@ runs:
       with:
         arch: amd64
 
-    - name: Setup Ninja
-      uses: ashutoshvarma/setup-ninja@master
+    #- name: Setup Ninja
+    #  uses: ashutoshvarma/setup-ninja@master
       
     - name: Build Cmake manually
       shell: bash
       env:
         BUILD_DIR: ./build
-        CONFIGURE_OPTIONS: -G Ninja
+        #CONFIGURE_OPTIONS: 
         #cc: ${{ matrix.config.cc }} # -DCMAKE_C_COMPILER=$CC -- instead, set in your project! (like probably "set(CMAKE_C_COMPILER gcc CACHE STRING "C compiler" FORCE)")
         #cxx: ${{ matrix.config.cxx }} # -DCMAKE_CXX_COMPILER=$CXX -- instead, set in your project! (like probably "set(CMAKE_CXX_COMPILER g++ CACHE STRING "C++ compiler" FORCE)")
         BUILD_TYPE: ${{ inputs.build_configuration }}
@@ -43,7 +43,7 @@ runs:
       run: |
         cd $WORK_PATH
         mkdir $BUILD_DIR
-        cmake $CONFIGURE_OPTIONS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -S . -B $BUILD_DIR 
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -S . -B $BUILD_DIR 
         ls -R -a > paths.txt
         
     - name: Save experiment
