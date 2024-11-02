@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:  
       - name: Build
-        uses: LunarisLib/actions/CMAKE
+        uses: LunarisLib/actions/CMAKE@master
         with:
           checkout: 'true'
           project_path: ./Examples/CMake_project/
