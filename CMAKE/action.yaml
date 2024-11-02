@@ -68,8 +68,8 @@ runs:
             ls -R -l
 
             cp runner.txt $TEMPORARY_DIR\logs
-            cp $BUILD_DIR/Release/*.exe $TEMPORARY_DIR/executables/ | :;
-            cp $BUILD_DIR/Debug/*.exe $TEMPORARY_DIR/executables/ | :;
+            cp $BUILD_DIR\\Release\\*.exe $TEMPORARY_DIR\\executables\\ | :;
+            cp $BUILD_DIR\\Debug\\*.exe $TEMPORARY_DIR\\executables\\ | :;
         else 
             cmake --build $BUILD_DIR > runner.txt;
             
