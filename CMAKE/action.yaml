@@ -47,38 +47,29 @@ runs:
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIRECTORY -S . -B $BUILD_DIR 
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE;
-            mkdir {{ runner.workspace }}/executables
-            cp $BUILD_DIR/*/* {{ runner.workspace }}/executables
+            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
+            mkdir ${{ runner.workspace }}/executables;
+            cp $BUILD_DIR/*/* ${{ runner.workspace }}/executables;
         else 
-            cmake --build $BUILD_DIR;
-            cat test.txt | grep Built | awk '{print $NF}' > execs.txt
+            cmake --build $BUILD_DIR > runner.txt;
+            cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
+            cp execs.txt ${{ runner.workspace }}/logs  
+
             for file in $(<execs.txt); do
-              cp "$BUILD_DIR/$file" {{ runner.workspace }}/executables;
-            done
-        fi                
-        ls -R -a > paths.txt        
-    - name: Save experiment
+              cp "$BUILD_DIR/$file" ${{ runner.workspace }}/executables;
+            done;
+        fi
+
+        cp runner.txt ${{ runner.workspace }}/logs  
+        
+    - name: Save logs
       uses: actions/upload-artifact@main
       with:
-        name: stuff_${{ runner.os }}
-        path: ${{ runner.workspace }}/executables
+        name: logs_${{ runner.os }}
+        path: ${{ runner.workspace }}/logs
 
-    #- name: Build with CMake
-    #  uses: ashutoshvarma/action-cmake-build@master
-    #  with:
-    #    build-dir: ${{ runner.workspace }}/build
-    #    cc: ${{ matrix.config.cc }}
-    #    cxx: ${{ matrix.config.cxx }}
-    #    configure-options: -G Ninja
-    #    build-type: ${{ inputs.build_configuration }}
-    #
-    #- name: "Rename for Artifact"
-    #  run: mv ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter${{ matrix.config.ext }} ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter_${{ matrix.config.name }}${{ matrix.config.ext }}
-    #
-    #- name: Save build folder as artifact
-    #  uses: actions/upload-artifact@main
-    #  with:
-    #    name: release_${{ matrix.config.name }}
-    #    path: ${{ runner.workspace }}/build/FileEncrypter/FileEncrypter_${{ matrix.config.name }}${{ matrix.config.ext }}
-        
+    - name: Save build
+      uses: actions/upload-artifact@main
+      with:
+        name: build_${{ runner.os }}
+        path: ${{ runner.workspace }}/executables
