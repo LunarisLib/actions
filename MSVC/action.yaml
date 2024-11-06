@@ -9,6 +9,10 @@ inputs:
     description: 'Should this checkout the project automagically?'
     required: false
     default: 'false'
+  project_path:
+    description: 'Project path to work on?'
+    required: false
+    default: ${{ runner.workspace }}
   
 runs:
   using: composite
@@ -22,15 +26,12 @@ runs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+    - name: Run NuGet restore and Build
+      working-directory: ${{ inputs.project_path }}
       shell: powershell
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
-
-    - name: Build project(s)
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: powershell
-      run: msbuild /m /p:OutDir=${{ runner.workspace }}\build_out\ /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        nuget restore .
+        msbuild /m /p:OutDir=${{ runner.workspace }}\build_out\ /p:Configuration=${{ inputs.build_configuration }} .
 
     - name: Save build folder as artifact
       uses: actions/upload-artifact@main

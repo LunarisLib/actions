@@ -6,3 +6,6 @@
 .cmake/
 CMakeFiles/
 out/
+VisualSt.*/
+x86/
+x64/
