@@ -18,12 +18,19 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Re-checkout with depth
+      uses: actions/checkout@main
+      with:
+        fetch-depth: 2
+
     - name: Generate changelog
       shell: bash
       run: |
         echo "${{ inputs.body }}" >> changelog.txt
         if [[ -n "${{ inputs.body }}" ]]; then echo "\n\n" >> changelog.txt; fi
         echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
+
+    # MUST DOWNLOAD BACK TO A FOLDER AND files: FOLDER/*
 
     - name: Upload
       uses: softprops/action-gh-release@master

@@ -27,7 +27,7 @@ jobs:
           title: "CMake Release"
           body: "This is a sample of a body to the example of a CMake project"
           artifact_names: ${{ matrix.os }}_PROJECT
-          tag_name: v0.${{ github.ref_name }}
+          tag_name: v0.${{ github.ref_name }}_${{ matrix.os }}
 
 
     

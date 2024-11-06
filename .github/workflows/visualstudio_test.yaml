@@ -23,7 +23,7 @@ jobs:
           title: "Visual Studio Release"
           body: "This is a sample of a body to the example of a Visual Studio project"
           artifact_names: VS_PROJECT
-          tag_name: v0.${{ github.ref_name }}
+          tag_name: v0.${{ github.ref_name }}_Windows
 
 
     
