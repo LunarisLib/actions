@@ -17,7 +17,7 @@ inputs:
     required: false
     default: 'false'
   artifact_name:
-    description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs'
+    description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs)'
     required: true
     
   

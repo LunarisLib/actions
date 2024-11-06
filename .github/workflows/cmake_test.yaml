@@ -18,8 +18,16 @@ jobs:
         uses: LunarisLib/actions/CMake@master
         with:
           checkout: 'true'
-          project_path: ./Examples/CMake_project/
+          project_path: ./.examples/CMake_project/
           artifact_name: ${{ matrix.os }}_PROJECT
+
+      - name: Publish
+        uses: LunarisLib/actions/Publisher@master
+        with:
+          title: "CMake Release"
+          body: "This is a sample of a body to the example of a CMake project"
+          artifact_names: ${{ matrix.os }}_PROJECT
+          tag_name: v0.${{ github.ref_name }}
 
 
     

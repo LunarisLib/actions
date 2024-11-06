@@ -14,7 +14,16 @@ jobs:
         uses: LunarisLib/actions/MSVC@master
         with:
           checkout: 'true'
-          project_path: ./Examples/VisualStudio_project/
+          project_path: ./.examples/VisualStudio_project/
+          artifact_name: VS_PROJECT
+
+      - name: Publish
+        uses: LunarisLib/actions/Publisher@master
+        with:
+          title: "Visual Studio Release"
+          body: "This is a sample of a body to the example of a Visual Studio project"
+          artifact_names: VS_PROJECT
+          tag_name: v0.${{ github.ref_name }}
 
 
     

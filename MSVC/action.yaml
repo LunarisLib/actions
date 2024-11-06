@@ -13,6 +13,9 @@ inputs:
     description: 'Project path to work on?'
     required: false
     default: ${{ runner.workspace }}
+  artifact_name:
+    description: 'How to name this project outputs as Artifacts?'
+    required: true
   
 runs:
   using: composite
@@ -36,6 +39,6 @@ runs:
     - name: Save build folder as artifact
       uses: actions/upload-artifact@main
       with:
-        name: build
+        name: ${{ inputs.artifact_name }}
         path: ${{ runner.workspace }}/build_out/*.exe
         

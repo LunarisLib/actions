@@ -1,0 +1,34 @@
+name: 'Publisher helper that creates a changelog to append automatically'
+description: 'Works on any platform.'
+inputs:
+  title:
+    description: 'Title for the Release page'
+    required: true
+  body:
+    description: 'Text to be on top of the description body'
+    required: false
+  artifact_names:
+    description: 'Files to get from artifacts'
+    required: true
+  tag_name:
+    description: 'Tag to be used'
+    required: false
+    default: ${{ github.ref_name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate changelog
+      shell: bash
+      run: |
+        echo "${{ inputs.body }}" >> changelog.txt
+        if [[ -n "${{ inputs.body }}" ]]; then echo "\n\n" >> changelog.txt; fi
+        echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
+
+    - name: Upload
+      uses: softprops/action-gh-release@master
+      with:
+        name: ${{ inputs.title }}
+        body_path: changelog.txt
+        tag_name: ${{ inputs.tag_name }}
+        files: ${{ inputs.artifact_names }}
