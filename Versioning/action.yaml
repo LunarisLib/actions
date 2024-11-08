@@ -62,7 +62,8 @@ runs:
         mv $ORIGINAL_FILES $TEMP_FOLDER
 
         cp -a "$TEMP_FOLDER/.git" ./
-                
+        
+        SS_WEEK=$(date +"%Yw%U" | grep -o '.....$')
                 
         printf "🌝 Working on branch info...\n"
 
@@ -87,7 +88,7 @@ runs:
             printf "0" > revision.txt
             printf "0" > release-candidate.txt
             printf "0" > snapshot.txt
-            printf "%sb%s" $(date +"%Yw%U" | grep -o '.....$') $(<snapshot.txt) > last_snapshot.txt
+            printf "%sb0" $SS_WEEK > last_snapshot.txt
             printf "0" > commit_counter.txt
         fi
         
@@ -95,6 +96,12 @@ runs:
 
         printf "%s" $(($(<commit_counter.txt) + 1)) > commit_counter.txt
         
+        if [[ $SS_WEEK != $(grep -o '^.....' last_snapshot.txt) ]]; then
+            printf "🌝 Snapshot week changed, reset on counter for snapshots...\n"
+            printf "0" > snapshot.txt
+            printf "%sb%s" $SS_WEEK $(<snapshot.txt) > last_snapshot.txt
+        fi
+
         printf "🌝 Working on requested feature...\n"
 
         if [[ $REQ == "M" ]]; then
@@ -104,7 +111,6 @@ runs:
             printf "0" > minor.txt
             printf "0" > revision.txt
             printf "0" > release-candidate.txt
-            printf "0" > snapshot.txt
             printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
 
         elif [[ $REQ == "m" ]]; then
@@ -113,7 +119,6 @@ runs:
             printf "%s" $(($(<minor.txt) + 1)) > minor.txt
             printf "0" > revision.txt
             printf "0" > release-candidate.txt
-            printf "0" > snapshot.txt
             printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
 
         elif [[ $REQ == "r" ]]; then
@@ -121,21 +126,19 @@ runs:
             printf "🌝 Revision bump!\n"
             printf "%s" $(($(<revision.txt) + 1)) > revision.txt
             printf "0" > release-candidate.txt
-            printf "0" > snapshot.txt
             printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
 
         elif [[ $REQ == "rc" ]]; then
 
             printf "🌝 Release candidate bump!\n"
             printf "%s" $(($(<release-candidate.txt) + 1)) > release-candidate.txt
-            printf "0" > snapshot.txt
             printf "returned=v%s.%s.%s-rc%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) $(<release-candidate.txt) >> $GITHUB_OUTPUT
 
         elif [[ $REQ == "snapshot" ]]; then
 
-            printf "🌝 Snapshot bump!\n"
-            printf "%s" $(($(<snapshot.txt) + 1)) > snapshot.txt            
-            printf "%sb%s" $(date +"%Yw%U" | grep -o '.....$') $(<snapshot.txt) > last_snapshot.txt
+            printf "🌝 Snapshot build bump!\n"
+            printf "%s" $(($(<snapshot.txt) + 1)) > snapshot.txt
+            printf "%sb%s" $SS_WEEK $(<snapshot.txt) > last_snapshot.txt
             printf "returned=%s\n" $(<last_snapshot.txt) >> $GITHUB_OUTPUT
 
         else 
@@ -156,6 +159,7 @@ runs:
         printf "%c Current version: **v%s.%s.%s**\n" - $(<major.txt) $(<minor.txt) $(<revision.txt) >> ../README.md
         printf "%c Current release candidate: **%s**\n" - $(<release-candidate.txt) >> ../README.md
         printf "%c Current snapshot build: **%s**\n" - $(<snapshot.txt) >> ../README.md
+        printf "%c Current snapshot name: **%s**\n" - $(<last_snapshot.txt) >> ../README.md
         printf "%c Commit counter: **%s**" - $(<commit_counter.txt) >> ../README.md
 
         printf "🌝 Commiting...\n"
