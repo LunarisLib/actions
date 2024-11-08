@@ -1,5 +1,5 @@
 name: 'Publisher helper that creates a changelog to append automatically'
-description: 'Works on any platform.'
+description: 'Works on any platform. Clears your path, so you'll have to checkout again!'
 inputs:
   kind:
     description: "A command: ['M' for Major bump, 'm' for minor bump, 'r' for revision bump, 'rc' for release candidate bump, 'snapshot' for snapshot versioning]"
@@ -25,21 +25,33 @@ runs:
 
         git checkout --orphan _versioning
         
+        printf "Moving stuff to _bkp folder\n"
+
+        BKP_LIST=$(ls)
+        mkdir _bkp
+        mv $BKP_LIST _bkp
+
         printf "Fetching branches...\n"
 
         git fetch -a -p
         
-        printf "Checking branch info...\n"
+        printf "Checking branches info...\n"
 
+        BACK_BRANCH=$(git rev-parse --abbrev-ref HEAD)
         FIND_BRANCH=$(git ls-remote --heads origin refs/heads/_versioning)
         
         printf "Working on branch info...\n"
 
         if [[ -n "$FIND_BRANCH" ]]; then 
             printf "Branch exists, pull...\n"
-            git pull origin _versioning
+            git pull origin ___versioning
+            cd ___versioning
         else
             printf "New branch! Working on it\n"
+
+            mkdir ___versioning
+            cd ___versioning
+
             printf "1" > major.txt
             printf "0" > minor.txt
             printf "0" > revision.txt
@@ -53,11 +65,21 @@ runs:
         
         printf "Commiting...\n"
 
-        git add .
+        cd ..
+        git add ___versioning
         git commit -m "[LunarisLib/Versioning] Versioning on orphan branch."
         
         printf "Pushing...\n"
 
-        git push -u origin _versioning
+        git push -u origin _versioning        
+        
+        printf "Moving things back...\n"
+        
+        git checkout "$BACK_BRANCH"
+
+        
         
         printf "Done!\n"
+        
+    - name: Checkout back
+      uses: actions/checkout@main
