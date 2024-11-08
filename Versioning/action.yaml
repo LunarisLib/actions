@@ -1,5 +1,5 @@
 name: 'Publisher helper that creates a changelog to append automatically'
-description: 'Works on any platform. Clears your path, so you'll have to checkout again!'
+description: 'Works on any platform. Clears your path, so you''ll have to checkout again!'
 inputs:
   kind:
     description: "A command: ['M' for Major bump, 'm' for minor bump, 'r' for revision bump, 'rc' for release candidate bump, 'snapshot' for snapshot versioning]"
@@ -25,19 +25,12 @@ runs:
 
         git checkout --orphan _versioning
         
-        printf "Moving stuff to _bkp folder\n"
-
-        BKP_LIST=$(ls)
-        mkdir _bkp
-        mv $BKP_LIST _bkp
-
         printf "Fetching branches...\n"
 
         git fetch -a -p
         
         printf "Checking branches info...\n"
-
-        BACK_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        
         FIND_BRANCH=$(git ls-remote --heads origin refs/heads/_versioning)
         
         printf "Working on branch info...\n"
@@ -75,11 +68,7 @@ runs:
         
         printf "Moving things back...\n"
         
-        git checkout "$BACK_BRANCH"
-
-        
+        git checkout ${{ github.ref_name }}
+        rm -rf ___versioning        
         
         printf "Done!\n"
-        
-    - name: Checkout back
-      uses: actions/checkout@main
