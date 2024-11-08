@@ -14,14 +14,50 @@ runs:
 
     - name: Tests
       shell: bash
-      run: |
-        printf "Experiment" > testing.txt
-        
+      run: |        
+        printf "Configuring user and token...\n"
+
         git config --global user.email "lunaris.versioning@lib.com"
         git config --global user.name "Lunaris Lib Versioning Action"
-
         git remote set-url origin https://${{ github.token }}@github.com/${{ github.repository }}.git
+        
+        printf "Checking out branch...\n"
 
-        git add testing.txt
-        git commit -m "Testing"
-        git push -u origin master
+        git checkout --orphan _versioning
+        
+        printf "Fetching branches...\n"
+
+        git fetch -a -p
+        
+        printf "Checking branch info...\n"
+
+        FIND_BRANCH=$(git ls-remote --heads origin refs/heads/_versioning)
+        
+        printf "Working on branch info...\n"
+
+        if [[ -n "$FIND_BRANCH" ]]; then 
+            printf "Branch exists, pull...\n"
+            git pull origin _versioning
+        else
+            printf "New branch! Working on it\n"
+            printf "1" > major.txt
+            printf "0" > minor.txt
+            printf "0" > revision.txt
+            printf "1" > release-candidate.txt
+            printf "24w01a" > snapshot.txt
+        fi
+        
+        printf "Couting commits...\n"
+
+        printf "%llu" $(($(<commit_counter.txt) + 1)) > commit_counter.txt
+        
+        printf "Commiting...\n"
+
+        git add .
+        git commit -m "[LunarisLib/Versioning] Versioning on orphan branch."
+        
+        printf "Pushing...\n"
+
+        git push -u origin _versioning
+        
+        printf "Done!\n"
