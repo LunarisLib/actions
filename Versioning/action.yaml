@@ -1,4 +1,4 @@
-name: 'Publisher helper that creates a changelog to append automatically'
+﻿name: 'Publisher helper that creates a changelog to append automatically'
 description: 'Works on any platform. Clears your path, so you''ll have to checkout again!'
 inputs:
   kind:
@@ -12,38 +12,53 @@ runs:
     - name: Checkout
       uses: actions/checkout@main
 
-    - name: Tests
+    - name: Versioning
       shell: bash
-      run: |        
-        printf "Configuring user and token...\n"
+      env:
+        TEMP_FOLDER: '___bkp'
+        VERSIONING_FOLDER: '___versioning'
+        VERSIONING_BRANCH: '_versioning'
+        EMAIL: lunaris.versioning@lib.com
+        USERNAME: Lunaris Lib Versioning Action
+      run: |
+        printf "🌝 --> Configuring user and token...\n"
 
-        git config --global user.email "lunaris.versioning@lib.com"
-        git config --global user.name "Lunaris Lib Versioning Action"
+        git config --global user.email "$EMAIL"
+        git config --global user.name "$USERNAME"
         git remote set-url origin https://${{ github.token }}@github.com/${{ github.repository }}.git
-        
-        printf "Checking out branch...\n"
-
-        git checkout --orphan _versioning
-                
-        printf "Fetching branches...\n"
+                        
+        printf "🌝 --> Fetching branches...\n"
 
         git fetch -a -p
         
-        printf "Checking branches info...\n"
+        printf "🌝 --> Checking branches info...\n"
         
-        FIND_BRANCH=$(git ls-remote --heads origin refs/heads/_versioning)
+        FIND_BRANCH=$(git ls-remote --heads origin refs/heads/$VERSIONING_BRANCH)
+
+        printf "🌝 --> Moving things around...\n"
+
+        ORIGINAL_FILES=$(ls -A)
+        mkdir -p $TEMP_FOLDER
+        mv $ORIGINAL_FILES $TEMP_FOLDER
+
+        cp -a "$TEMP_FOLDER/.git" ./
+        printf "$TEMP_FOLDER/" > .gitignore
+                
+        printf "🌝 --> Checking out branch...\n"
+
+        git checkout --orphan $VERSIONING_BRANCH
         
-        printf "Working on branch info...\n"
+        printf "🌝 --> Working on branch info...\n"
 
         if [[ -n "$FIND_BRANCH" ]]; then 
-            printf "Branch exists, pull...\n"
-            git pull origin ___versioning
-            cd ___versioning
+            printf "🌝 --> Branch exists, pull...\n"
+            git pull origin $VERSIONING_BRANCH
+            cd $VERSIONING_FOLDER
         else
-            printf "New branch! Working on it\n"
+            printf "🌝 --> New branch! Working on it\n"
 
-            mkdir ___versioning
-            cd ___versioning
+            mkdir $VERSIONING_FOLDER
+            cd $VERSIONING_FOLDER
 
             printf "1" > major.txt
             printf "0" > minor.txt
@@ -53,22 +68,27 @@ runs:
             printf "0" > commit_counter.txt
         fi
         
-        printf "Couting commits...\n"
+        printf "🌝 --> Couting commits...\n"
 
         printf "%llu" $(($(<commit_counter.txt) + 1)) > commit_counter.txt
         
-        printf "Commiting...\n"
+        printf "🌝 --> Commiting...\n"
 
         cd ..
-        git commit -m "[LunarisLib/Versioning] Versioning on orphan branch." -- ___versioning
         
-        printf "Pushing...\n"
+        git add .
+        git status
+        git commit -m "[LunarisLib/Versioning] Versioning on orphan branch."
+        
+        printf "🌝 --> Pushing...\n"
 
-        git push -u origin _versioning        
+        git push -u origin $VERSIONING_BRANCH        
         
-        printf "Moving things back...\n"
+        printf "🌝 --> Moving things back...\n"
         
-        git checkout ${{ github.ref_name }}
-        rm -rf ___versioning
-
-        printf "Done!\n"
+        rm -rf $VERSIONING_FOLDER
+        rm -rf .git
+        rm .gitignore
+        mv $(ls -A "$TEMP_FOLDER" | sed -e 's/^/'"$TEMP_FOLDER"'\//') .
+        
+        printf "🌝 --> Everything should be back at last state now!\n"
