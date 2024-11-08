@@ -1,0 +1,29 @@
+name: 'Publisher helper that creates a changelog to append automatically'
+description: 'Works on any platform.'
+inputs:
+  kind:
+    description: "A command: ['M' for Major bump, 'm' for minor bump, 'r' for revision bump, 'rc' for release candidate bump, 'snapshot' for snapshot versioning]"
+    required: true
+    
+
+runs:
+  using: composite
+  steps:
+    - name: Check variables
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        echo "$(gh variable get __ll_versioning_major)"
+        echo "$(gh variable get __ll_versioning_minor)"
+        echo "$(gh variable get __ll_versioning_rev)"
+        echo "$(gh variable get __ll_versioning_rc)"
+        echo "$(gh variable get __ll_versioning_ss)"
+
+    - if: ${{ inputs.kind == 'M' }}
+      name: Major bump
+      shell: bash
+      run: |
+        echo "doing it"
+        
+          

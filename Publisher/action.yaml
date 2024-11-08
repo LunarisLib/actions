@@ -26,11 +26,15 @@ runs:
     - name: Generate changelog
       shell: bash
       run: |
-        echo "${{ inputs.body }}" >> changelog.txt
-        if [[ -n "${{ inputs.body }}" ]]; then echo "\n\n" >> changelog.txt; fi
+        printf "${{ inputs.body }}" >> changelog.txt
+        if [[ -n "${{ inputs.body }}" ]]; then printf "\n\n" >> changelog.txt; fi
         echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
-
-    # MUST DOWNLOAD BACK TO A FOLDER AND files: FOLDER/*
+            
+    - name: "Download back file"
+      uses: actions/download-artifact@master
+      with:
+        name: ${{ inputs.artifact_names }}
+        path: ./.publish_files/
 
     - name: Upload
       uses: softprops/action-gh-release@master
@@ -38,4 +42,4 @@ runs:
         name: ${{ inputs.title }}
         body_path: changelog.txt
         tag_name: ${{ inputs.tag_name }}
-        files: ${{ inputs.artifact_names }}
+        files: .publish_files/*
