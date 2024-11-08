@@ -1,0 +1,21 @@
+name: Versioning action example test
+
+on:
+#  push:
+#    branches:
+#      - master
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test the versioning thing
+        uses: LunarisLib/actions/Versioning@master
+        with:
+          kind: 'M'
+
+
+    

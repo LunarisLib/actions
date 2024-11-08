@@ -9,21 +9,19 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Check variables
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        echo "$(gh variable get __ll_versioning_major)"
-        echo "$(gh variable get __ll_versioning_minor)"
-        echo "$(gh variable get __ll_versioning_rev)"
-        echo "$(gh variable get __ll_versioning_rc)"
-        echo "$(gh variable get __ll_versioning_ss)"
+    - name: Checkout
+      uses: actions/checkout@main
 
-    - if: ${{ inputs.kind == 'M' }}
-      name: Major bump
+    - name: Tests
       shell: bash
       run: |
-        echo "doing it"
+        printf "Experiment" > testing.txt
         
-          
+        git config --global user.email "lunaris.versioning@lib.com"
+        git config --global user.name "Lunaris Lib Versioning Action"
+
+        git remote set-url origin https://${{ github.token }}@github.com/${{ github.repository }}.git
+
+        git add testing.txt
+        git commit -m "Testing"
+        git push -u origin master

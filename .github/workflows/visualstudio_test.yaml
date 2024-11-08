@@ -25,10 +25,5 @@ jobs:
           artifact_names: VS_PROJECT
           tag_name: v0.${{ github.ref_name }}_Windows
 
-      - name: Test the versioning thing
-        uses: LunarisLib/actions/Versioning@master
-        with:
-          kind: 'M'
-
 
     

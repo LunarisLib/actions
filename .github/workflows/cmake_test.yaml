@@ -29,10 +29,5 @@ jobs:
           artifact_names: ${{ matrix.os }}_PROJECT
           tag_name: v0.${{ github.ref_name }}_${{ matrix.os }}
 
-      - name: Test the versioning thing
-        uses: LunarisLib/actions/Versioning@master
-        with:
-          kind: 'M'
-
 
     
