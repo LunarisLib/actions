@@ -5,6 +5,11 @@ on:
 #    branches:
 #      - master
   workflow_dispatch:
+    inputs:
+      kind:
+        type: string
+        description: The kind of upgrade [M,m,r,rc,snapshot,*]
+        required: true
 
 permissions: write-all
 
@@ -13,9 +18,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test the versioning thing
+        id: versioning
         uses: LunarisLib/actions/Versioning@master
         with:
-          kind: 'M'
+          kind: ${{ inputs.kind }}
+
+      - name: Print all values got from versioning!
+        shell: bash
+        env:
+          VERSION: ${{ steps.versioning.outputs.version }}
+          RELEASE: ${{ steps.versioning.outputs.current_release }}
+          SNAPSHOT: ${{ steps.versioning.outputs.current_snapshot }}
+          RC: ${{ steps.versioning.outputs.current_release_candidate }}
+        run: |
+          printf "Resulted in:\n"
+          printf "%c steps.versioning.outputs.version = $VERSION\n" -
+          printf "%c steps.versioning.outputs.current_release = $RELEASE\n" -
+          printf "%c steps.versioning.outputs.current_snapshot = $SNAPSHOT\n" -
+          printf "%c steps.versioning.outputs.current_release_candidate = $RC\n" -
+          
 
 
     

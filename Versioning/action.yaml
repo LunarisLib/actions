@@ -4,7 +4,23 @@ inputs:
   kind:
     description: "A command: ['M' for Major bump, 'm' for minor bump, 'r' for revision bump, 'rc' for release candidate bump, 'snapshot' for snapshot versioning]"
     required: true
-    
+  branch:
+    description: "The branch used for versioning files (defaults to '_versioning')"
+    required: false
+    default: _versioning
+outputs:
+  version:
+    description: Current version, based of kind. If it was Major, minor or revision, format will be "vXX.XX.XX". If rc, "vXX.XX.XX-rcXX". If snapshot, "YYwWWbBB. If none of them, vXX.XX.XX."
+    value: ${{ steps.versioning.outputs.returned }}
+  current_release:
+    description: Current version, in format "vXX.XX.XX"
+    value: ${{ steps.versioning.outputs.release }}
+  current_snapshot:
+    description: Current snapshot, in format "YYwWWbBB"
+    value: ${{ steps.versioning.outputs.snapshot }}
+  current_release_candidate:
+    description: Current release candidate, in format "vXX.XX.XX-rcXX"
+    value: ${{ steps.versioning.outputs.release_candidate }}
 
 runs:
   using: composite
@@ -13,66 +29,136 @@ runs:
       uses: actions/checkout@main
 
     - name: Versioning
+      id: versioning
       shell: bash
       env:
         TEMP_FOLDER: '___bkp'
         VERSIONING_FOLDER: '___versioning'
-        VERSIONING_BRANCH: '_versioning'
+        VERSIONING_BRANCH: ${{ inputs.branch }}
         EMAIL: lunaris.versioning@lib.com
         USERNAME: Lunaris Lib Versioning Action
+        REQ: ${{ inputs.kind }}
       run: |
-        printf "🌝 --> Configuring user and token...\n"
+        printf "🌝 ==================== Begin of the run ==================== 🌝\n"
+
+        printf "🌝 Configuring user, token, and stuff...\n"
 
         git config --global user.email "$EMAIL"
         git config --global user.name "$USERNAME"
         git remote set-url origin https://${{ github.token }}@github.com/${{ github.repository }}.git
-                        
-        printf "🌝 --> Fetching branches...\n"
+                
+        printf "🌝 Fetching branches...\n"
 
         git fetch -a -p
         
-        printf "🌝 --> Checking branches info...\n"
+        printf "🌝 Checking branches info...\n"
         
         FIND_BRANCH=$(git ls-remote --heads origin refs/heads/$VERSIONING_BRANCH)
 
-        printf "🌝 --> Moving things around...\n"
+        printf "🌝 Moving things around...\n"
 
         ORIGINAL_FILES=$(ls -A)
         mkdir -p $TEMP_FOLDER
         mv $ORIGINAL_FILES $TEMP_FOLDER
 
         cp -a "$TEMP_FOLDER/.git" ./
-        printf "$TEMP_FOLDER/" > .gitignore
                 
-        printf "🌝 --> Checking out branch...\n"
+                
+        printf "🌝 Working on branch info...\n"
 
-        git checkout --orphan $VERSIONING_BRANCH
-        
-        printf "🌝 --> Working on branch info...\n"
+        if [[ -n "$FIND_BRANCH" ]]; then         
+            printf "🌝 Checking out branch...\n"
+            git checkout $VERSIONING_BRANCH
 
-        if [[ -n "$FIND_BRANCH" ]]; then 
-            printf "🌝 --> Branch exists, pull...\n"
+            printf "🌝 Branch exists, pull...\n"
             git pull origin $VERSIONING_BRANCH
             cd $VERSIONING_FOLDER
-        else
-            printf "🌝 --> New branch! Working on it\n"
+        else            
+            printf "🌝 New branch! Checking out branch and working on it...\n"
+            git checkout --orphan $VERSIONING_BRANCH
+            
+            printf "$TEMP_FOLDER/" > .gitignore
 
             mkdir $VERSIONING_FOLDER
             cd $VERSIONING_FOLDER
 
-            printf "1" > major.txt
+            printf "0" > major.txt
             printf "0" > minor.txt
             printf "0" > revision.txt
-            printf "1" > release-candidate.txt
-            printf "24w01a" > snapshot.txt
+            printf "0" > release-candidate.txt
+            printf "0" > snapshot.txt
+            printf "%sb%s" $(date +"%Yw%U" | grep -o '.....$') $(<snapshot.txt) > last_snapshot.txt
             printf "0" > commit_counter.txt
         fi
         
-        printf "🌝 --> Couting commits...\n"
+        printf "🌝 Counting commits...\n"
 
-        printf "%llu" $(($(<commit_counter.txt) + 1)) > commit_counter.txt
+        printf "%s" $(($(<commit_counter.txt) + 1)) > commit_counter.txt
         
-        printf "🌝 --> Commiting...\n"
+        printf "🌝 Working on requested feature...\n"
+
+        if [[ $REQ == "M" ]]; then
+
+            printf "🌝 Major bump!\n"
+            printf "%s" $(($(<major.txt) + 1)) > major.txt
+            printf "0" > minor.txt
+            printf "0" > revision.txt
+            printf "0" > release-candidate.txt
+            printf "0" > snapshot.txt
+            printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
+
+        elif [[ $REQ == "m" ]]; then
+
+            printf "🌝 Minor bump!\n"
+            printf "%s" $(($(<minor.txt) + 1)) > minor.txt
+            printf "0" > revision.txt
+            printf "0" > release-candidate.txt
+            printf "0" > snapshot.txt
+            printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
+
+        elif [[ $REQ == "r" ]]; then
+
+            printf "🌝 Revision bump!\n"
+            printf "%s" $(($(<revision.txt) + 1)) > revision.txt
+            printf "0" > release-candidate.txt
+            printf "0" > snapshot.txt
+            printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
+
+        elif [[ $REQ == "rc" ]]; then
+
+            printf "🌝 Release candidate bump!\n"
+            printf "%s" $(($(<release-candidate.txt) + 1)) > release-candidate.txt
+            printf "0" > snapshot.txt
+            printf "returned=v%s.%s.%s-rc%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) $(<release-candidate.txt) >> $GITHUB_OUTPUT
+
+        elif [[ $REQ == "snapshot" ]]; then
+
+            printf "🌝 Snapshot bump!\n"
+            printf "%s" $(($(<snapshot.txt) + 1)) > snapshot.txt            
+            printf "%sb%s" $(date +"%Yw%U" | grep -o '.....$') $(<snapshot.txt) > last_snapshot.txt
+            printf "returned=%s\n" $(<last_snapshot.txt) >> $GITHUB_OUTPUT
+
+        else 
+
+            printf "🌝 No changes? Doing nothing then, just counting commit. Final value will be as release, but no changes\n"
+            printf "returned=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
+
+        fi
+
+        printf "release=v%s.%s.%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) >> $GITHUB_OUTPUT
+        printf "snapshot=%s\n" $(<last_snapshot.txt) >> $GITHUB_OUTPUT
+        printf "release_candidate=v%s.%s.%s-rc%s\n" $(<major.txt) $(<minor.txt) $(<revision.txt) $(<release-candidate.txt) >> $GITHUB_OUTPUT
+        
+        printf "🌝 Generating README...\n"
+
+        printf "# Versioning branch\n\n" > ../README.md
+        printf "*This is an automated branch managed by [this action](https://github.com/LunarisLib/actions/tree/master/Versioning).*\n\n" >> ../README.md
+        printf "%c Current version: **v%s.%s.%s**\n" - $(<major.txt) $(<minor.txt) $(<revision.txt) >> ../README.md
+        printf "%c Current release candidate: **%s**\n" - $(<release-candidate.txt) >> ../README.md
+        printf "%c Current snapshot build: **%s**\n" - $(<snapshot.txt) >> ../README.md
+        printf "%c Commit counter: **%s**" - $(<commit_counter.txt) >> ../README.md
+
+        printf "🌝 Commiting...\n"
 
         cd ..
         
@@ -80,15 +166,16 @@ runs:
         git status
         git commit -m "[LunarisLib/Versioning] Versioning on orphan branch."
         
-        printf "🌝 --> Pushing...\n"
+        printf "🌝 Pushing...\n"
 
         git push -u origin $VERSIONING_BRANCH        
         
-        printf "🌝 --> Moving things back...\n"
+        printf "🌝 Moving things back...\n"
         
         rm -rf $VERSIONING_FOLDER
         rm -rf .git
         rm .gitignore
         mv $(ls -A "$TEMP_FOLDER" | sed -e 's/^/'"$TEMP_FOLDER"'\//') .
         
-        printf "🌝 --> Everything should be back at last state now!\n"
+        printf "🌝 Everything should be back at last state now!\n"
+        printf "🌝 ====================  End of the run  ==================== 🌝\n"
