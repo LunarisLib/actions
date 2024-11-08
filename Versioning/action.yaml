@@ -24,7 +24,7 @@ runs:
         printf "Checking out branch...\n"
 
         git checkout --orphan _versioning
-        
+                
         printf "Fetching branches...\n"
 
         git fetch -a -p
@@ -50,6 +50,7 @@ runs:
             printf "0" > revision.txt
             printf "1" > release-candidate.txt
             printf "24w01a" > snapshot.txt
+            printf "0" > commit_counter.txt
         fi
         
         printf "Couting commits...\n"
@@ -59,8 +60,7 @@ runs:
         printf "Commiting...\n"
 
         cd ..
-        git add ___versioning
-        git commit -m "[LunarisLib/Versioning] Versioning on orphan branch."
+        git commit -m "[LunarisLib/Versioning] Versioning on orphan branch." -- ___versioning
         
         printf "Pushing...\n"
 
@@ -69,6 +69,6 @@ runs:
         printf "Moving things back...\n"
         
         git checkout ${{ github.ref_name }}
-        rm -rf ___versioning        
-        
+        rm -rf ___versioning
+
         printf "Done!\n"
