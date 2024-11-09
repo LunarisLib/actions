@@ -1,4 +1,4 @@
-name: 'Publisher helper that creates a changelog to append automatically'
+﻿name: 'Publisher helper that creates a changelog to append automatically'
 description: 'Works on any platform.'
 inputs:
   title:
@@ -18,6 +18,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Put title for summary
+      shell: bash
+      run: |
+        echo "## 🌝 LunarisLib/actions/Publisher" >> $GITHUB_STEP_SUMMARY
+        
+        echo "*This is the log output for this action:*" >> $GITHUB_STEP_SUMMARY
+        echo "- Title of release page: ${{ inputs.title }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Tag name: ${{ inputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+
     - name: Re-checkout with depth
       uses: actions/checkout@main
       with:
@@ -28,7 +37,7 @@ runs:
       run: |
         printf "${{ inputs.body }}" >> changelog.txt
         if [[ -n "${{ inputs.body }}" ]]; then printf "\n\n" >> changelog.txt; fi
-        echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
+        echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
             
     - if: ${{ inputs.artifact_name }}
       name: "Download back file"
@@ -52,7 +61,12 @@ runs:
             mv $line $(sed -e 's/\//_/;s/\*$//' <<< $line)
         done
         rm -rf */
-        ls -lA
+                
+        echo "#### Files being uploaded:" >> $GITHUB_STEP_SUMMARY
+        ls -A | sed -e 's/\*$//' | while read line; do
+          echo "- $line" >> $GITHUB_STEP_SUMMARY
+        done
+
         cd ..
         
     - name: Upload
@@ -63,3 +77,8 @@ runs:
         tag_name: ${{ inputs.tag_name }}
         fail_on_unmatched_files: 'true'
         files: root_publish_files_folder/*
+        
+    - name: Finish summary with happy ending
+      shell: bash
+      run: |
+        echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY

@@ -1,4 +1,4 @@
-name: 'CMake ready reusable action made by Lohk'
+﻿name: 'CMake ready reusable action made by Lohk'
 description: 'Made to build CMake projects for Linux, Windows and/or MacOS'
 inputs:
   build_configuration:
@@ -24,20 +24,26 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Put title for summary
+      shell: bash
+      run: |
+        echo "## 🌝 LunarisLib/actions/CMake" >> $GITHUB_STEP_SUMMARY
+
+        echo "*This is the log output for this action:*" >> $GITHUB_STEP_SUMMARY
+        echo "- Kind of build: ${{ inputs.build_configuration }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Project path: ${{ inputs.project_path }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifact name: ${{ inputs.artifact_name }}" >> $GITHUB_STEP_SUMMARY
+
     - name: Checkout if requested
       if: ${{ inputs.checkout == 'true' }}
       uses: actions/checkout@main
       with:
         submodules: 'true'
         
-    # self test if it is windows
-    - name: Setup MSVC if needed
+    - name: Setup MSVC if needed (automatic)
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
-
-    #- name: Setup Ninja
-    #  uses: ashutoshvarma/setup-ninja@master
       
     - name: Build Cmake manually
       shell: bash
@@ -110,10 +116,7 @@ runs:
         name: ${{ inputs.artifact_name }}_logs
         path: ${{ runner.workspace }}/logs/${{ inputs.artifact_name }}/
         
-
-# Use only in case of debug:
-#    - name: Save build
-#      uses: actions/upload-artifact@main
-#      with:
-#        name: build_${{ runner.os }}
-#        path: ${{ runner.workspace }}/
+    - name: Finish summary with happy ending
+      shell: bash
+      run: |
+        echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY

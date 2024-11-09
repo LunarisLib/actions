@@ -43,6 +43,14 @@ runs:
         USERNAME: Lunaris Lib Versioning Action
         REQ: ${{ inputs.kind }}
       run: |
+        echo "## 🌝 LunarisLib/actions/Versioning" >> $GITHUB_STEP_SUMMARY
+
+        echo "*This is the log output for this action:*" >> $GITHUB_STEP_SUMMARY
+        echo "- Temp folder used: $TEMP_FOLDER" >> $GITHUB_STEP_SUMMARY
+        echo "- Versioning folder used: $VERSIONING_FOLDER" >> $GITHUB_STEP_SUMMARY
+        echo "- Versioning branch used: $VERSIONING_BRANCH" >> $GITHUB_STEP_SUMMARY
+        echo "- Kind of versioning in this run: $REQ" >> $GITHUB_STEP_SUMMARY
+
         printf "🌝 ==================== Begin of the run ==================== 🌝\n"
 
         printf "🌝 Configuring user, token, and stuff...\n"
@@ -165,6 +173,13 @@ runs:
         printf "%c Current snapshot build: **%s**\n" - $(<snapshot.txt) >> ../README.md
         printf "%c Current snapshot name: **%s**\n" - $(<last_snapshot.txt) >> ../README.md
         printf "%c Commit counter: **%s**" - $(<commit_counter.txt) >> ../README.md
+          
+        echo "#### Final results:" >> $GITHUB_STEP_SUMMARY
+        printf "%c Current version: **v%s.%s.%s**\n" - $(<major.txt) $(<minor.txt) $(<revision.txt) >> ../README.md
+        printf "%c Current release candidate: **%s**\n" - $(<release-candidate.txt) >> ../README.md
+        printf "%c Current snapshot build: **%s**\n" - $(<snapshot.txt) >> ../README.md
+        printf "%c Current snapshot name: **%s**\n" - $(<last_snapshot.txt) >> ../README.md
+        printf "%c Commit counter: **%s**" - $(<commit_counter.txt) >> ../README.md
 
         printf "🌝 Commiting...\n"
 
@@ -186,4 +201,7 @@ runs:
         mv $(ls -A "$TEMP_FOLDER" | sed -e 's/^/'"$TEMP_FOLDER"'\//') .
         
         printf "🌝 Everything should be back at last state now!\n"
+        
+        echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
+
         printf "🌝 ====================  End of the run  ==================== 🌝\n"

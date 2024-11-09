@@ -1,4 +1,4 @@
-name: 'MSVC ready reusable action made by Lohk'
+﻿name: 'MSVC ready reusable action made by Lohk'
 description: 'Made to build Microsoft Visual Studio projects with MSVC, nuget and submodules as easy as possible.'
 inputs:
   build_configuration:
@@ -20,6 +20,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Put title for summary
+      shell: bash
+      run: |
+        echo "## 🌝 LunarisLib/actions/MSVC" >> $GITHUB_STEP_SUMMARY
+
+        echo "*This is the log output for this action:*" >> $GITHUB_STEP_SUMMARY
+        echo "- Kind of build: ${{ inputs.build_configuration }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Project path: ${{ inputs.project_path }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifact name: ${{ inputs.artifact_name }}" >> $GITHUB_STEP_SUMMARY
+
     - name: Checkout if requested
       if: ${{ inputs.checkout == 'true' }}
       uses: actions/checkout@main
@@ -41,4 +51,9 @@ runs:
       with:
         name: ${{ inputs.artifact_name }}
         path: ${{ runner.workspace }}/build_out/*.exe
+        
+    - name: Finish summary with happy ending
+      shell: bash
+      run: |
+        echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
         
