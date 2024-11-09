@@ -29,7 +29,7 @@ jobs:
         with:
           title: "Visual Studio Release"
           body: "This is a sample of a body to the example of a Visual Studio project"
-          artifact_names: VS_PROJECT
+          artifact_name: VS_PROJECT
           tag_name: ${{ steps.versioning.outputs.version }}_Windows
 
 
