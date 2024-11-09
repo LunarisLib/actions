@@ -20,6 +20,13 @@ jobs:
           checkout: 'true'
           project_path: ./.examples/CMake_project/
           artifact_name: ${{ matrix.os }}_PROJECT
+          
+      - name: Versioning
+        id: versioning
+        uses: LunarisLib/actions/Versioning@master
+        with:
+          kind: 'm'
+          project: CMAKE_${{ matrix.os }}_PROJECT
 
       - name: Publish
         uses: LunarisLib/actions/Publisher@master
@@ -27,7 +34,7 @@ jobs:
           title: "CMake Release"
           body: "This is a sample of a body to the example of a CMake project"
           artifact_names: ${{ matrix.os }}_PROJECT
-          tag_name: v0.${{ github.ref_name }}_${{ matrix.os }}
+          tag_name: ${{ steps.versioning.outputs.version }}_${{ matrix.os }}
 
 
     

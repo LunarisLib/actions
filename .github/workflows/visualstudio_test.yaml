@@ -16,6 +16,13 @@ jobs:
           checkout: 'true'
           project_path: ./.examples/VisualStudio_project/
           artifact_name: VS_PROJECT
+          
+      - name: Versioning
+        id: versioning
+        uses: LunarisLib/actions/Versioning@master
+        with:
+          kind: 'm'
+          project: VS_PROJECT
 
       - name: Publish
         uses: LunarisLib/actions/Publisher@master
@@ -23,7 +30,7 @@ jobs:
           title: "Visual Studio Release"
           body: "This is a sample of a body to the example of a Visual Studio project"
           artifact_names: VS_PROJECT
-          tag_name: v0.${{ github.ref_name }}_Windows
+          tag_name: ${{ steps.versioning.outputs.version }}_Windows
 
 
     
