@@ -4,10 +4,14 @@ inputs:
   kind:
     description: "A command: ['M' for Major bump, 'm' for minor bump, 'r' for revision bump, 'rc' for release candidate bump, 'snapshot' for snapshot versioning]"
     required: true
-  branch:
-    description: "The branch used for versioning files (defaults to '_versioning')"
+  path:
+    description: "The path for branch used for versioning files (defaults to '_versioning')"
     required: false
     default: _versioning
+  project:
+    description: Project name, for multiple versionings at the same time under path
+    required: false
+    default: default
 outputs:
   version:
     description: Current version, based of kind. If it was Major, minor or revision, format will be "vXX.XX.XX". If rc, "vXX.XX.XX-rcXX". If snapshot, "YYwWWbBB. If none of them, vXX.XX.XX."
@@ -34,7 +38,7 @@ runs:
       env:
         TEMP_FOLDER: '___bkp'
         VERSIONING_FOLDER: '___versioning'
-        VERSIONING_BRANCH: ${{ inputs.branch }}
+        VERSIONING_BRANCH: ${{ inputs.path }}/${{ inputs.project }}
         EMAIL: lunaris.versioning@lib.com
         USERNAME: Lunaris Lib Versioning Action
         REQ: ${{ inputs.kind }}
