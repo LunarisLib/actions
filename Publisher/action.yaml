@@ -7,9 +7,9 @@ inputs:
   body:
     description: 'Text to be on top of the description body'
     required: false
-  artifact_names:
-    description: 'Files to get from artifacts'
-    required: true
+  artifact_name:
+    description: 'Files to get from artifacts, or empty if all possible'
+    required: false
   tag_name:
     description: 'Tag to be used'
     required: false
@@ -30,10 +30,17 @@ runs:
         if [[ -n "${{ inputs.body }}" ]]; then printf "\n\n" >> changelog.txt; fi
         echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
             
-    - name: "Download back file"
+    - if: ${{ inputs.artifact_name }}
+      name: "Download back file"
       uses: actions/download-artifact@master
       with:
-        name: ${{ inputs.artifact_names }}
+        name: ${{ inputs.artifact_name }}
+        path: ./.publish_files/
+
+    - if: ${{ ! inputs.artifact_name }}
+      name: "Download back all files"
+      uses: actions/download-artifact@master
+      with:
         path: ./.publish_files/
 
     - name: Upload
