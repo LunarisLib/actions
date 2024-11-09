@@ -11,7 +11,7 @@ jobs:
     #continue-on-error: true
     strategy:
       matrix:
-        os: [ windows-latest, ubuntu-latest, macos-latest ]
+        os: [ ubuntu-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:  
       - name: Build
@@ -21,20 +21,23 @@ jobs:
           project_path: ./.examples/CMake_project/
           artifact_name: ${{ matrix.os }}_PROJECT
           
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Versioning
         id: versioning
         uses: LunarisLib/actions/Versioning@master
         with:
           kind: 'm'
-          project: CMAKE_${{ matrix.os }}_PROJECT
-
+          project: CMAKE_PROJECT
+          
       - name: Publish
         uses: LunarisLib/actions/Publisher@master
         with:
           title: "CMake Release"
           body: "This is a sample of a body to the example of a CMake project"
-          artifact_names: ${{ matrix.os }}_PROJECT
-          tag_name: ${{ steps.versioning.outputs.version }}_${{ matrix.os }}
+          tag_name: ${{ steps.versioning.outputs.version }}_CMAKE
 
 
     
