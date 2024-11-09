@@ -42,20 +42,14 @@ runs:
       uses: actions/download-artifact@master
       with:
         path: root_publish_files_folder/
-
-    - name: List files to upload
-      shell: bash
-      run: |
-        echo "======== FILES IN FOLDER ========"
-        ls -A root_publish_files_folder | sed -e 's/^/root_publish_files_folder\//'
-        echo "======== ENDOF FILES IN FOLDER ========"
-
+        
     - name: Upload
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@master
       with:
         name: ${{ inputs.title }}
         body_path: changelog.txt
         tag_name: ${{ inputs.tag_name }}
+        fail_on_unmatched_files: 'false'
         files: |
-          root_publish_files_folder
           root_publish_files_folder/*
+          root_publish_files_folder/*/*
