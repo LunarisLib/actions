@@ -42,6 +42,18 @@ runs:
       uses: actions/download-artifact@master
       with:
         path: root_publish_files_folder/
+
+    - if: ${{ ! inputs.artifact_name }}
+      name: Fix pathing
+      shell: bash
+      run: |    
+        cd root_publish_files_folder
+        ls -rtd */* | sed -e 's/\*$//' | while read line; do
+            mv $line $(sed -e 's/\//_/;s/\*$//' <<< $line)
+        done
+        rm -rf */
+        ls -lA
+        cd ..
         
     - name: Upload
       uses: softprops/action-gh-release@master
@@ -49,7 +61,5 @@ runs:
         name: ${{ inputs.title }}
         body_path: changelog.txt
         tag_name: ${{ inputs.tag_name }}
-        fail_on_unmatched_files: 'false'
-        files: |
-          root_publish_files_folder/*
-          root_publish_files_folder/*/*
+        fail_on_unmatched_files: 'true'
+        files: root_publish_files_folder/*
