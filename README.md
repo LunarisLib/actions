@@ -4,6 +4,6 @@
 
 - Current version: **v0.0.1**
 - Current release candidate: **0**
-- Current snapshot build: **0**
-- Current snapshot name: **24w44b0**
-- Commit counter: **1**
+- Current snapshot build: **1**
+- Current snapshot name: **24w44b1**
+- Commit counter: **2**
