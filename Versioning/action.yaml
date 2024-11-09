@@ -67,7 +67,7 @@ runs:
 
         cp -a "$TEMP_FOLDER/.git" ./
         
-        SS_WEEK=$(date +"%Yw%U" | grep -o '.....$')
+        SS_WEEK=$(date +"%Yw%V" | grep -o '.....$')
                 
         printf "🌝 Working on branch info...\n"
 
