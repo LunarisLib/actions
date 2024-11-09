@@ -7,9 +7,9 @@ inputs:
   body:
     description: 'Text to be on top of the description body'
     required: false
-  artifact_names:
-    description: 'Files to get from artifacts'
-    required: true
+  artifact_name:
+    description: 'Files to get from artifacts, or empty if all possible'
+    required: false
   tag_name:
     description: 'Tag to be used'
     required: false
@@ -30,16 +30,32 @@ runs:
         if [[ -n "${{ inputs.body }}" ]]; then printf "\n\n" >> changelog.txt; fi
         echo "**Full Changelog**: https://github.com/Lohkdesgds/ImageViewer/compare/$(git rev-parse HEAD~1)...$(git rev-parse HEAD)" >> changelog.txt
             
-    - name: "Download back file"
+    - if: ${{ inputs.artifact_name }}
+      name: "Download back file"
       uses: actions/download-artifact@master
       with:
-        name: ${{ inputs.artifact_names }}
-        path: ./.publish_files/
+        name: ${{ inputs.artifact_name }}
+        path: root_publish_files_folder/
+
+    - if: ${{ ! inputs.artifact_name }}
+      name: "Download back all files"
+      uses: actions/download-artifact@master
+      with:
+        path: root_publish_files_folder/
+
+    - name: List files to upload
+      shell: bash
+      run: |
+        echo "======== FILES IN FOLDER ========"
+        ls -A root_publish_files_folder | sed -e 's/^/root_publish_files_folder\//'
+        echo "======== ENDOF FILES IN FOLDER ========"
 
     - name: Upload
-      uses: softprops/action-gh-release@master
+      uses: softprops/action-gh-release@v2
       with:
         name: ${{ inputs.title }}
         body_path: changelog.txt
         tag_name: ${{ inputs.tag_name }}
-        files: .publish_files/*
+        files: |
+          root_publish_files_folder
+          root_publish_files_folder/*
