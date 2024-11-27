@@ -14,6 +14,10 @@ inputs:
     description: 'Tag to be used'
     required: false
     default: ${{ github.ref_name }}
+  prerelease:
+    description: 'Set as pre-release'
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -77,6 +81,7 @@ runs:
         tag_name: ${{ inputs.tag_name }}
         fail_on_unmatched_files: 'true'
         files: root_publish_files_folder/*
+        prerelease: ${{ inputs.prerelease }}
         
     - name: Finish summary with happy ending
       shell: bash

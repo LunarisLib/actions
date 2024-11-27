@@ -5,6 +5,17 @@ on:
 #    branches:
 #      - master
   workflow_dispatch:
+    inputs:
+      make_prerelease:
+        description: Make it a pre-release
+        type: string
+        required: false
+        default: 'false'
+      bump_type:
+        description: What to bump
+        type: string
+        required: false
+        default: 'm'
 
 jobs:
   build:
@@ -21,7 +32,7 @@ jobs:
         id: versioning
         uses: LunarisLib/actions/Versioning@master
         with:
-          kind: 'm'
+          kind: ${{ inputs.bump_type }}
           project: VS_PROJECT
 
       - name: Publish
@@ -31,6 +42,7 @@ jobs:
           body: "This is a sample of a body to the example of a Visual Studio project"
           artifact_name: VS_PROJECT
           tag_name: ${{ steps.versioning.outputs.version }}_Windows
+          prerelease: ${{ inputs.make_prerelease }}
 
 
     
