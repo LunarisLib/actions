@@ -63,6 +63,26 @@ runs:
         PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
         echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
 
+        echo "Inspecting CMakeLists.txt for VCPKG_TARGET_TRIPLET mentions..."
+
+        MENTIONS=$(cat "$PROJECT_PATH""CMakeLists.txt" | grep VCPKG_TARGET_TRIPLET)
+
+        if [[ -n $TEST ]]; then 
+          echo "As your CMakeTests.txt already has mentions to VCPKG_TARGET_TRIPLET, no automated stuff will be done."
+        else 
+          echo "Starting automated insertion of if-set platform stuff for Github Actions"
+
+          DATATOINSERT='# Automatically generated stuff!\nif (WIN32)\n  set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")\nelseif(UNIX AND NOT APPLE)\n  set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")\nelse()\n  set(VCPKG_TARGET_TRIPLET "arm64-osx" CACHE STRING "")\nendif()'
+          cat "$PROJECT_PATH""CMakeLists.txt" | sed '/cmake_minimum_required\(.*\)/a'"$DATATOINSERT" > "$PROJECT_PATH""CMakeLists_new.txt"
+          mv "$PROJECT_PATH""CMakeLists.txt" "$PROJECT_PATH""CMakeLists_old.txt"
+          mv "$PROJECT_PATH""CMakeLists_new.txt" "$PROJECT_PATH""CMakeLists.txt"
+
+          echo "Got new CMakeLists.txt for you:"
+          echo "=========================================="
+          cat "$PROJECT_PATH""CMakeLists.txt"
+          echo "=========================================="
+        fi
+
 
         echo "Cloning vcpkg to "'${{ github.workspace }}'"/vcpkg"
 
@@ -117,30 +137,7 @@ runs:
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
-        cd $WORK_PATH
-
-        if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
-          echo "Inspecting CMakeLists.txt for VCPKG_TARGET_TRIPLET mentions..."
-
-          MENTIONS=$(cat CMakeLists.txt | grep VCPKG_TARGET_TRIPLET)
-
-          if [[ -n $TEST ]]; then 
-            echo "As your CMakeTests.txt already has mentions to VCPKG_TARGET_TRIPLET, no automated stuff will be done."
-          else 
-            echo "Starting automated insertion of if-set platform stuff for Github Actions"
-
-            DATATOINSERT='# Automatically generated stuff!\nif (WIN32)\n  set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")\nelseif(UNIX AND NOT APPLE)\n  set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")\nelse()\n  set(VCPKG_TARGET_TRIPLET "arm64-osx" CACHE STRING "")\nendif()'
-            cat CMakeLists.txt | sed '/cmake_minimum_required\(.*\)/a'"$DATATOINSERT" > CMakeLists_new.txt
-            mv CMakeLists.txt CMakeLists_old.txt
-            mv CMakeLists_new.txt CMakeLists.txt
-
-            echo "Got new CMakeLists.txt for you:"
-            echo "=========================================="
-            cat CMakeLists.txt
-            echo "=========================================="
-          fi
-        fi
-        
+        cd $WORK_PATH        
         
         if [[ ${{ runner.os }} == "Windows" ]]; then
             P_BUILD=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$BUILD_DIR
