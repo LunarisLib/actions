@@ -125,21 +125,27 @@ runs:
             P_LOGGS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$LOGS_DIR
             CC=cl
             CXX=cl
-            TRIPLET=x64-windows
+            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
+              export VCPKG_TARGET_TRIPLET=x64-windows
+            fi
         elif [[ ${{ runner.os }} == "macOS" ]]; then
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
             CC=clang
             CXX=clang++
-            TRIPLET=x64-linux
+            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
+              export VCPKG_TARGET_TRIPLET=x64-linux
+            fi
         else
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
             CC=gcc
             CXX=g++
-            TRIPLET=arm64-osx
+            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
+              export VCPKG_TARGET_TRIPLET=arm64-osx
+            fi
         fi    
         
         echo "Cleaning up paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
@@ -155,7 +161,7 @@ runs:
 
         if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
           echo "Preparing CMake with TRIPLET setting for VCPKG..."
-          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DVCPKG_TARGET_TRIPLET="$TRIPLET" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
+          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DVCPKG_TARGET_TRIPLET="$VCPKG_TARGET_TRIPLET" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
         else
           echo "Preparing CMake..."
           cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
