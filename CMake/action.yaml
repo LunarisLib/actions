@@ -56,6 +56,43 @@ runs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
+
+    - name: Append VCPKG to CMakeLists.txt automagically
+      if: ${{ inputs.cmake_vcpkg_easy == 'true' }}
+      shell: bash
+      env:
+        WORK_PATH: ${{ inputs.project_path }}
+      run: |
+        PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
+
+        echo "Accessing $PROJECT_PATH..."
+
+        cd $PROJECT_PATH
+
+        echo "Working on new CMakeLists.txt..."
+        
+        echo "if (WIN32)" >> CMakeLists_new.txt
+        echo "  set(VCPKG_TARGET_TRIPLET \"x64-windows\" CACHE STRING \"\")" >> CMakeLists_new.txt
+        echo "elseif(UNIX AND NOT APPLE)" >> CMakeLists_new.txt
+        echo "  set(VCPKG_TARGET_TRIPLET \"x64-linux\" CACHE STRING \"\")" >> CMakeLists_new.txt
+        echo "else()" >> CMakeLists_new.txt
+        echo "  set(VCPKG_TARGET_TRIPLET \"arm64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
+        echo "endif()" >> CMakeLists_new.txt
+
+        cat CMakeLists.txt >> CMakeLists_new.txt
+
+        echo "Shuffling stuff around..."
+
+        mv CMakeLists.txt CMakeLists_old.txt
+        mv CMakeLists_new.txt CMakeLists.txt
+
+        echo "Your new CMakeLists.txt:"
+        echo "========================================="
+        cat CMakeLists.txt
+        echo "========================================="
+
+        cd '${{ github.workspace }}'  
+        echo "Good!"
       
     - name: Using VCPKG
       if: ${{ inputs.use_vcpkg == 'true' }}
