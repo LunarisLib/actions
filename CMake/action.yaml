@@ -102,7 +102,7 @@ runs:
         echo "Environment export (hopefully it works)..."
         
         export CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        echo "CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE="'${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
         echo "Good!"
 
