@@ -67,26 +67,6 @@ runs:
         PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
         echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
 
-
-        if [[ ${{ inputs.cmake_vcpkg_easy }} == "true" ]]; then
-          cd $PROJECT_PATH
-
-          echo "Starting automated insertion of if-set platform stuff for Github Actions"
-
-          DATATOINSERT='# Automatically generated stuff!\nif (WIN32)\n  set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")\nelseif(UNIX AND NOT APPLE)\n  set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")\nelse()\n  set(VCPKG_TARGET_TRIPLET "arm64-osx" CACHE STRING "")\nendif()'
-          cat CMakeLists.txt | sed '/cmake_minimum_required\\(.*\\)/a'"$DATATOINSERT" > CMakeLists_new.txt
-          mv CMakeLists.txt CMakeLists_old.txt
-          mv CMakeLists_new.txt CMakeLists.txt
-
-          echo "Got new CMakeLists.txt for you:"
-          echo "=========================================="
-          cat CMakeLists.txt
-          echo "=========================================="
-
-          cd '${{ github.workspace }}'
-        fi
-
-
         echo "Cloning vcpkg to "'${{ github.workspace }}'"/vcpkg"
 
         git clone https://github.com/microsoft/vcpkg.git '${{ github.workspace }}'/vcpkg
