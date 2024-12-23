@@ -99,6 +99,11 @@ runs:
         ${{ github.workspace }}/vcpkg/vcpkg install 2>&1 | tee runner.txt -a;
         cd ${{ github.workspace }}
 
+        echo "Environment export (hopefully it works)..."
+        
+        export CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        echo "CMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
         echo "Good!"
 
     - name: Build Cmake manually
@@ -194,7 +199,7 @@ runs:
         # Just to be sure no errors here
         touch runner.txt
 
-        echo "#### The run ended with issues! Check the log ahead" >> $GITHUB_STEP_SUMMARY
+        echo "#### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
         echo "```" >> $GITHUB_STEP_SUMMARY
         cat runner.txt >> $GITHUB_STEP_SUMMARY
         echo "```" >> $GITHUB_STEP_SUMMARY
