@@ -19,6 +19,10 @@ inputs:
   artifact_name:
     description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs)'
     required: true
+  extra_flags:
+    description: 'Put more flags to cmake build? (like "--trace")'
+    required: false
+    default: ''
     
   
 runs:
@@ -83,12 +87,12 @@ runs:
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE > runner.txt;
+            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} > runner.txt;
             cat runner.txt
 
             cp $P_BUILD/*/*.exe "$P_EXECS/";
         else 
-            cmake --build $P_BUILD > runner.txt;
+            cmake --build $P_BUILD ${{ inputs.extra_flags }} > runner.txt;
             cat runner.txt
 
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
