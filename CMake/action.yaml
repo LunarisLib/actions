@@ -66,8 +66,7 @@ runs:
         echo "Inspecting CMakeLists.txt for VCPKG_TARGET_TRIPLET mentions..."
 
         cd $PROJECT_PATH
-        ls
-        MENTIONS=$(cat CMakeLists.txt | grep "VCPKG_TARGET_TRIPLET")
+        MENTIONS=$(grep "VCPKG_TARGET_TRIPLET" < CMakeLists.txt)
 
         if [[ -n $TEST ]]; then 
           echo "As your CMakeTests.txt already has mentions to VCPKG_TARGET_TRIPLET, no automated stuff will be done."
