@@ -118,6 +118,29 @@ runs:
         WORK_PATH: ${{ inputs.project_path }}
       run: |
         cd $WORK_PATH
+
+        if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
+          echo "Inspecting CMakeLists.txt for VCPKG_TARGET_TRIPLET mentions..."
+
+          MENTIONS=$(cat CMakeLists.txt | grep VCPKG_TARGET_TRIPLET)
+
+          if [[ -n $TEST ]]; then 
+            echo "As your CMakeTests.txt already has mentions to VCPKG_TARGET_TRIPLET, no automated stuff will be done."
+          else 
+            echo "Starting automated insertion of if-set platform stuff for Github Actions"
+
+            DATATOINSERT='# Automatically generated stuff!\nif (WIN32)\n  set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")\nelseif(UNIX AND NOT APPLE)\n  set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")\nelse()\n  set(VCPKG_TARGET_TRIPLET "arm64-osx" CACHE STRING "")\nendif()'
+            cat CMakeLists.txt | sed '/cmake_minimum_required\(.*\)/a'"$DATATOINSERT" > CMakeLists_new.txt
+            mv CMakeLists.txt CMakeLists_old.txt
+            mv CMakeLists_new.txt CMakeLists.txt
+
+            echo "Got new CMakeLists.txt for you:"
+            echo "=========================================="
+            cat CMakeLists.txt
+            echo "=========================================="
+          fi
+        fi
+        
         
         if [[ ${{ runner.os }} == "Windows" ]]; then
             P_BUILD=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$BUILD_DIR
@@ -125,27 +148,18 @@ runs:
             P_LOGGS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$LOGS_DIR
             CC=cl
             CXX=cl
-            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
-              export VCPKG_TARGET_TRIPLET=x64-windows
-            fi
         elif [[ ${{ runner.os }} == "macOS" ]]; then
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
             CC=clang
             CXX=clang++
-            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
-              export VCPKG_TARGET_TRIPLET=x64-linux
-            fi
         else
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
             CC=gcc
             CXX=g++
-            if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
-              export VCPKG_TARGET_TRIPLET=arm64-osx
-            fi
         fi    
         
         echo "Cleaning up paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
@@ -159,13 +173,8 @@ runs:
         mkdir -p $P_LOGGS;
 
 
-        if [[ ${{ steps.install-vcpkg.outputs.vcpkg_enabled }} == "true" ]]; then 
-          echo "Preparing CMake with TRIPLET setting for VCPKG..."
-          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DVCPKG_TARGET_TRIPLET="$VCPKG_TARGET_TRIPLET" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
-        else
-          echo "Preparing CMake..."
-          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
-        fi
+        echo "Preparing CMake..."
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;   
 
                 
         echo "Running build CMake..."
