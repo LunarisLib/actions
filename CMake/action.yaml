@@ -59,50 +59,50 @@ runs:
       env:
         WORK_PATH: ${{ inputs.project_path }}
       run: |
-        PROJECT_PATH="${{ github.workspace }}/$WORK_PATH/"
+        PROJECT_PATH='${{ github.workspace }}'"${{ github.workspace }}/$WORK_PATH/"
         echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
 
 
-        echo "Cloning vcpkg to ${{ github.workspace }}/vcpkg"
+        echo "Cloning vcpkg to "'${{ github.workspace }}'"/vcpkg"
 
-        git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+        git clone https://github.com/microsoft/vcpkg.git '${{ github.workspace }}'/vcpkg
                 
-        echo "VCPKG_ROOT=\"${{ github.workspace }}/vcpkg\"" >> $GITHUB_ENV
-        echo "${{ github.workspace }}/vcpkg" >> $GITHUB_PATH
+        echo "VCPKG_ROOT=\""'${{ github.workspace }}'"/vcpkg\"" >> $GITHUB_ENV
+        echo '${{ github.workspace }}'"/vcpkg" >> $GITHUB_PATH
 
         echo "Current GITHUB_PATH: $GITHUB_PATH"
         echo "Current PATH: $PATH"
         echo "Setup..."
 
-        cd ${{ github.workspace }}/vcpkg
+        cd '${{ github.workspace }}'/vcpkg
         
         if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
-          export PATH="${{ github.workspace }}/vcpkg:$PATH"
+          export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
         elif [ "${{ matrix.os }}" == "macos-latest" ]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
-          export PATH="${{ github.workspace }}/vcpkg:$PATH"
+          export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
         elif [ "${{ matrix.os }}" == "windows-latest" ]; then
 
           ./bootstrap-vcpkg.bat -disableMetrics
-          export PATH="${{ github.workspace }}/vcpkg;$PATH"
+          export PATH='${{ github.workspace }}'"/vcpkg;$PATH"
 
         fi
 
         echo "Installing packages..."
 
         cd $PROJECT_PATH
-        ${{ github.workspace }}/vcpkg/vcpkg install 2>&1 | tee runner.txt -a;
-        cd ${{ github.workspace }}
+        '${{ github.workspace }}'/vcpkg/vcpkg install 2>&1 | tee runner.txt -a;
+        cd '${{ github.workspace }}'
 
         echo "Environment export (hopefully it works)..."
         
-        export CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        echo "CMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        export CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        echo "CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
         echo "Good!"
 
