@@ -27,6 +27,10 @@ inputs:
     description: 'Downloads, builds latest vcpkg and installs it'
     required: false
     default: 'false'
+  cmake_vcpkg_easy:
+    description: 'Auto add config to CMake for VCPKG. Needs use_vcpkg enabled'
+    required: false
+    default: 'true'
     
   
 runs:
@@ -63,18 +67,14 @@ runs:
         PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
         echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
 
-        echo "Inspecting CMakeLists.txt for VCPKG_TARGET_TRIPLET mentions..."
 
-        cd $PROJECT_PATH
-        MENTIONS=$(grep "VCPKG_TARGET_TRIPLET" < CMakeLists.txt | :)
+        if [[ ${{ inputs.cmake_vcpkg_easy }} == "true" ]]; then
+          cd $PROJECT_PATH
 
-        if [[ -n $TEST ]]; then 
-          echo "As your CMakeTests.txt already has mentions to VCPKG_TARGET_TRIPLET, no automated stuff will be done."
-        else 
           echo "Starting automated insertion of if-set platform stuff for Github Actions"
 
           DATATOINSERT='# Automatically generated stuff!\nif (WIN32)\n  set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")\nelseif(UNIX AND NOT APPLE)\n  set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")\nelse()\n  set(VCPKG_TARGET_TRIPLET "arm64-osx" CACHE STRING "")\nendif()'
-          cat CMakeLists.txt | sed '/cmake_minimum_required\(.*\)/a'"$DATATOINSERT" > CMakeLists_new.txt
+          cat CMakeLists.txt | sed '/cmake_minimum_required\\(.*\\)/a'"$DATATOINSERT" > CMakeLists_new.txt
           mv CMakeLists.txt CMakeLists_old.txt
           mv CMakeLists_new.txt CMakeLists.txt
 
@@ -82,9 +82,10 @@ runs:
           echo "=========================================="
           cat CMakeLists.txt
           echo "=========================================="
+
+          cd '${{ github.workspace }}'
         fi
 
-        cd '${{ github.workspace }}'
 
         echo "Cloning vcpkg to "'${{ github.workspace }}'"/vcpkg"
 
