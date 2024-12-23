@@ -59,7 +59,7 @@ runs:
       env:
         WORK_PATH: ${{ inputs.project_path }}
       run: |
-        PROJECT_PATH='${{ github.workspace }}'"${{ github.workspace }}/$WORK_PATH/"
+        PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
         echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
 
 
