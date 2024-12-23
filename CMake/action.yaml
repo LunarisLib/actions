@@ -23,6 +23,10 @@ inputs:
     description: 'Put more flags to cmake build? (like "--trace")'
     required: false
     default: ''
+  use_vcpkg:
+    description: 'Downloads, builds latest vcpkg and installs it'
+    required: false
+    default: 'false'
     
   
 runs:
@@ -49,6 +53,54 @@ runs:
       with:
         arch: amd64
       
+    - name: Using VCPKG
+      if: ${{ inputs.use_vcpkg == 'true' }}
+      shell: bash
+      env:
+        WORK_PATH: ${{ inputs.project_path }}
+      run: |
+        PROJECT_PATH="${{ github.workspace }}/$WORK_PATH/"
+        echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
+
+
+        echo "Cloning vcpkg to ${{ github.workspace }}/vcpkg"
+
+        git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
+                
+        echo "VCPKG_ROOT=\"${{ github.workspace }}/vcpkg\"" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/vcpkg" >> $GITHUB_PATH
+
+        echo "Current GITHUB_PATH: $GITHUB_PATH"
+        echo "Current PATH: $PATH"
+        echo "Setup..."
+
+        cd ${{ github.workspace }}/vcpkg
+        
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+
+          ./bootstrap-vcpkg.sh -disableMetrics
+          export PATH="${{ github.workspace }}/vcpkg:$PATH"
+
+        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+
+          ./bootstrap-vcpkg.sh -disableMetrics
+          export PATH="${{ github.workspace }}/vcpkg:$PATH"
+
+        elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+
+          ./bootstrap-vcpkg.bat -disableMetrics
+          export PATH="${{ github.workspace }}/vcpkg;$PATH"
+
+        fi
+
+        echo "Installing packages..."
+
+        cd $PROJECT_PATH
+        ${{ github.workspace }}/vcpkg/vcpkg install 2>&1 | tee runner.txt -a;
+        cd ${{ github.workspace }}
+
+        echo "Good!"
+
     - name: Build Cmake manually
       shell: bash
       env:
@@ -64,10 +116,22 @@ runs:
             P_BUILD=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$BUILD_DIR
             P_EXECS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$OUTPUT_DIR
             P_LOGGS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$LOGS_DIR
+            CC=cl
+            CXX=cl
+        elif [[ ${{ runner.os }} == "macOS" ]]; then
+            P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
+            P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
+            P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
+
+            CC=clang
+            CXX=clang++
         else
             P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
             P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
             P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
+
+            CC=gcc
+            CXX=g++
         fi    
         
         echo "Cleaning up paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
@@ -82,18 +146,16 @@ runs:
 
         echo "Preparing CMake..."
 
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -S . -B "$P_BUILD"
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;
                 
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} > runner.txt;
-            cat runner.txt
-
+            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
+            
             cp $P_BUILD/*/*.exe "$P_EXECS/";
         else 
-            cmake --build $P_BUILD ${{ inputs.extra_flags }} > runner.txt;
-            cat runner.txt
+            cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
             cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
             cp execs.txt ${{ runner.workspace }}/logs  
@@ -113,7 +175,7 @@ runs:
         name: ${{ inputs.artifact_name }}
         path: ${{ runner.workspace }}/built_executables/${{ inputs.artifact_name }}/
 
-    - if: ${{ inputs.upload_logs == 'true' }}
+    - if: ${{ inputs.upload_logs == 'true' && always() }}
       name: Save logs
       uses: actions/upload-artifact@main
       with:
@@ -121,6 +183,18 @@ runs:
         path: ${{ runner.workspace }}/logs/${{ inputs.artifact_name }}/
         
     - name: Finish summary with happy ending
+      if: success()
       shell: bash
       run: |
         echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
+    - name: Log errors if no success instead
+      if: failure()
+      shell: bash
+      run: |
+        # Just to be sure no errors here
+        touch runner.txt
+
+        echo "#### The run ended with issues! Check the log ahead" >> $GITHUB_STEP_SUMMARY
+        echo "```" >> $GITHUB_STEP_SUMMARY
+        cat runner.txt >> $GITHUB_STEP_SUMMARY
+        echo "```" >> $GITHUB_STEP_SUMMARY
