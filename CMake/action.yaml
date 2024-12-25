@@ -199,18 +199,28 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $P_BUILD --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
+
+            echo "Searching for build executables (.exe)..."
+
+            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
+
+            echo "Searching for build executables (not .out or .bin)..."
+
+            find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
         fi
 
-        echo "Searching for build executables..."
-
-        find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
 
         echo "Copying executables:"
         cat execs.txt
 
-        cp $(<execs.txt) $P_EXECS
+        cp $(<execs.txt) $P_EXECS || true
+
+        # for file in $(<execs.txt); do
+        #   cp $file $P_EXECS"/" || true;
+        # done;
+
 
         echo "Copying logs..."
 
