@@ -202,7 +202,7 @@ runs:
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
         fi
 
-        find $P_BUILD -type f -executable | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
+        find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
         cp execs.txt ${{ runner.workspace }}/logs  
 
         cp $(<execs.txt) $P_EXECS
