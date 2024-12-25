@@ -207,7 +207,7 @@ runs:
 
         cp $(<execs.txt) $P_EXECS
 
-        cp runner.txt '$P_LOGGS'"/"
+        cp runner.txt $P_LOGGS"/"
         
         echo "End!"
 
