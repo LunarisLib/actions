@@ -198,18 +198,14 @@ runs:
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
-            
-            cp $P_BUILD/*/*.exe "$P_EXECS/";
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
-
-            cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
-            cp execs.txt ${{ runner.workspace }}/logs  
-
-            for file in $(<execs.txt); do
-              cp "$P_BUILD/$file" "$P_EXECS/";
-            done;
         fi
+
+        find $P_BUILD -type f -executable | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
+        cp execs.txt ${{ runner.workspace }}/logs  
+
+        cp $(<execs.txt) $P_EXECS
 
         cp runner.txt "$P_LOGGS/"
         
