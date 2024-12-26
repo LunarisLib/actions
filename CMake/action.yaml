@@ -58,7 +58,7 @@ runs:
         arch: amd64
 
     - name: Append VCPKG to CMakeLists.txt automagically
-      if: ${{ inputs.cmake_vcpkg_easy == 'true' }}
+      if: ${{ inputs.use_vcpkg == 'true' && inputs.cmake_vcpkg_easy == 'true' }}
       shell: bash
       env:
         WORK_PATH: ${{ inputs.project_path }}
@@ -117,17 +117,17 @@ runs:
 
         cd '${{ github.workspace }}'/vcpkg
         
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
-        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
-        elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+        elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
 
           ./bootstrap-vcpkg.bat -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg;$PATH"
@@ -202,7 +202,7 @@ runs:
 
             echo "Searching for build executables (.exe)..."
 
-            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
+            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[\.dll]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
