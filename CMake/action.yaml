@@ -202,7 +202,7 @@ runs:
 
             echo "Searching for build executables (.exe)..."
 
-            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[CompilerIdCXX\.exe]$|.*[CompilerIdC\.exe]$" > execs.txt
+            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$" | grep -v -E ".*[CompilerIdCXX\.exe]$|.*[CompilerIdC\.exe]$|.*[\.pl]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
