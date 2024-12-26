@@ -202,13 +202,17 @@ runs:
 
             echo "Searching for build executables (.exe)..."
 
-            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$" > execs.txt
+            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[CompilerIdCXX\.exe]$|.*[CompilerIdC\.exe]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
-            echo "Searching for build executables (not .out or .bin)..."
+            echo "Searching for build executables (matches)..."
 
-            find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" > execs.txt
+            cat runner.txt | grep Built | awk '{print $NF}' > raw_execs.txt;
+            cp raw_execs.txt ${{ runner.workspace }}/logs 
+
+            # Filters .out and .bin and also filters by build output
+            find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" | grep $(<raw_execs.txt) > execs.txt
         fi
 
 
