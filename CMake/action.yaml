@@ -251,10 +251,4 @@ runs:
       if: failure()
       shell: bash
       run: |
-        # Just to be sure no errors here
-        touch runner.txt
-
-        echo "#### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
-        cat runner.txt >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
+        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY

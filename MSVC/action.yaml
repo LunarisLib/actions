@@ -52,8 +52,15 @@ runs:
         name: ${{ inputs.artifact_name }}
         path: ${{ runner.workspace }}/build_out/*.exe
         
+        
     - name: Finish summary with happy ending
+      if: success()
       shell: bash
       run: |
         echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
+    - name: Log errors if no success instead
+      if: failure()
+      shell: bash
+      run: |
+        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
         
