@@ -74,7 +74,7 @@ runs:
         cd ..
         
     - name: Upload
-      uses: softprops/action-gh-release@master
+      uses: softprops/action-gh-release@v2
       with:
         name: ${{ inputs.title }}
         body_path: changelog.txt
@@ -83,7 +83,14 @@ runs:
         files: root_publish_files_folder/*
         prerelease: ${{ inputs.prerelease }}
         
+        
     - name: Finish summary with happy ending
+      if: success()
       shell: bash
       run: |
         echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
+    - name: Log errors if no success instead
+      if: failure()
+      shell: bash
+      run: |
+        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY

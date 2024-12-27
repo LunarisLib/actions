@@ -58,7 +58,7 @@ runs:
         arch: amd64
 
     - name: Append VCPKG to CMakeLists.txt automagically
-      if: ${{ inputs.cmake_vcpkg_easy == 'true' }}
+      if: ${{ inputs.use_vcpkg == 'true' && inputs.cmake_vcpkg_easy == 'true' }}
       shell: bash
       env:
         WORK_PATH: ${{ inputs.project_path }}
@@ -117,17 +117,17 @@ runs:
 
         cd '${{ github.workspace }}'/vcpkg
         
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
-        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
 
           ./bootstrap-vcpkg.sh -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
 
-        elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+        elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
 
           ./bootstrap-vcpkg.bat -disableMetrics
           export PATH='${{ github.workspace }}'"/vcpkg;$PATH"
@@ -191,27 +191,45 @@ runs:
 
 
         echo "Preparing CMake..."
+
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;   
 
                 
         echo "Running build CMake..."
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build "$P_BUILD" --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
-            
-            cp $P_BUILD/*/*.exe "$P_EXECS/";
+            cmake --build $P_BUILD --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
+
+            echo "Searching for build executables (.exe)..."
+
+            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[\.dll]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
-            cat runner.txt | grep Built | awk '{print $NF}' > execs.txt;
-            cp execs.txt ${{ runner.workspace }}/logs  
+            echo "Searching for build executables (matches)..."
 
-            for file in $(<execs.txt); do
-              cp "$P_BUILD/$file" "$P_EXECS/";
-            done;
+            cat runner.txt | grep Built | awk '{print $NF}' > raw_execs.txt;
+            cp raw_execs.txt ${{ runner.workspace }}/logs 
+
+            # Filters .out and .bin and also filters by build output
+            find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" | grep $(<raw_execs.txt) > execs.txt
         fi
 
-        cp runner.txt "$P_LOGGS/"
+
+        echo "Copying executables:"
+        cat execs.txt
+
+        cp $(<execs.txt) $P_EXECS || true
+
+        # for file in $(<execs.txt); do
+        #   cp $file $P_EXECS"/" || true;
+        # done;
+
+
+        echo "Copying logs..."
+
+        cp execs.txt $P_LOGGS
+        cp runner.txt $P_LOGGS
         
         echo "End!"
 
@@ -237,10 +255,4 @@ runs:
       if: failure()
       shell: bash
       run: |
-        # Just to be sure no errors here
-        touch runner.txt
-
-        echo "#### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
-        cat runner.txt >> $GITHUB_STEP_SUMMARY
-        echo "```" >> $GITHUB_STEP_SUMMARY
+        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
