@@ -198,7 +198,7 @@ runs:
 
         echo "Preparing CMake..."
 
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRUNTIME_OUTPUT_DIRECTORY="$P_EXECS" -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" $TOOLCHAIN_ARGUMENT -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;   
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;   
                 
         echo "Running build CMake..."
 
@@ -206,31 +206,31 @@ runs:
         if [[ ${{ runner.os }} == "Windows" ]]; then 
             cmake --build $P_BUILD --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
-            echo "Searching for build executables (.exe)..."
+            #echo "Searching for build executables (.exe)..."
 
-            find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[\.dll]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
+            #find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[\.dll]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
         else 
             cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
 
-            echo "Searching for build executables (matches)..."
+            #echo "Searching for build executables (matches)..."
 
-            cat runner.txt | grep Built | awk '{print $NF}' > raw_execs.txt;
-            cp raw_execs.txt ${{ runner.workspace }}/logs 
+            #cat runner.txt | grep Built | awk '{print $NF}' > raw_execs.txt;
+            #cp raw_execs.txt ${{ runner.workspace }}/logs 
 
             # Filters .out and .bin and also filters by build output
-            find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" | grep $(<raw_execs.txt) > execs.txt
+            #find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" | grep $(<raw_execs.txt) > execs.txt
         fi
 
 
-        echo "Copying executables:"
-        cat execs.txt
+        #echo "Copying executables..."
+        #cat execs.txt
 
-        cp $(<execs.txt) $P_EXECS || true
+        #cp $(ls $P_EXECS) $P_EXECS || true
 
 
         echo "Copying logs..."
 
-        cp execs.txt $P_LOGGS
+        #cp execs.txt $P_LOGGS
         cp runner.txt $P_LOGGS
         
         echo "End!"
