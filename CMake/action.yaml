@@ -58,7 +58,7 @@ runs:
         echo VCPKG_RELATIVE=____internal_vcpkg                              >> $GITHUB_ENV
 
         if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
-          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake >> $GITHUB_ENV
+          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'/____internal_vcpkg/scripts/buildsystems/vcpkg.cmake >> $GITHUB_ENV
         fi
 
     - name: Put title for summary
