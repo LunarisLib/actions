@@ -54,10 +54,11 @@ runs:
 
         echo PROJECT_PATH=$PWD                                              >> $GITHUB_ENV
         echo ROOT_PATH='${{ github.workspace }}'                            >> $GITHUB_ENV
-        echo VCPKG_ROOT='${{ github.workspace }}'"/____internal_vcpkg"      >> $GITHUB_ENV
+        echo VCPKG_ROOT='${{ github.workspace }}'/____internal_vcpkg        >> $GITHUB_ENV
+        echo VCPKG_RELATIVE=____internal_vcpkg                              >> $GITHUB_ENV
 
         if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
-          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake >> $GITHUB_ENV
         fi
 
     - name: Put title for summary
@@ -129,6 +130,7 @@ runs:
       
     - name: Install VCPKG
       if: ${{ inputs.use_vcpkg == 'true' }}
+      working-directory: ${{ github.workspace }} # root
       shell: bash
       run: |
         echo ============================== STEP: Install VCPKG automatically ==============================
@@ -143,19 +145,21 @@ runs:
 
         echo "🔶 Cloning vcpkg to "$VCPKG_ROOT 2>&1 | tee $LOG_TXT -a
 
-        git clone https://github.com/microsoft/vcpkg.git "\""$VCPKG_ROOT"\""
+        git clone https://github.com/microsoft/vcpkg.git $VCPKG_RELATIVE
 
         echo "🔶 Setting up vcpkg..."  2>&1 | tee $LOG_TXT -a
 
+        cd $VCPKG_RELATIVE
+
         if [[ ${{ runner.os }} == "Windows" ]]; then
-          $VCPKG_ROOT/bootstrap-vcpkg.bat -disableMetrics
+          ./bootstrap-vcpkg.bat -disableMetrics
         else
-          $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics
+          ./bootstrap-vcpkg.sh -disableMetrics
         fi
 
         echo "🔶 Installing vcpkg packages..." 2>&1 | tee $LOG_TXT -a
 
-        $VCPKG_ROOT/vcpkg install 2>&1 | tee $MAKE_TXT -a
+        ./vcpkg install 2>&1 | tee $MAKE_TXT -a
         
         echo "🔶 vcpkg good!" 2>&1 | tee $LOG_TXT -a
 
