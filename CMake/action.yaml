@@ -61,6 +61,18 @@ runs:
           echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'/____internal_vcpkg/scripts/buildsystems/vcpkg.cmake >> $GITHUB_ENV
         fi
 
+        if [[ ${{ runner.os }} == "Windows" ]]; then
+            echo CC=cl        >> $GITHUB_ENV
+            echo CXX=cl       >> $GITHUB_ENV
+        elif [[ ${{ runner.os }} == "macOS" ]]; then
+            echo CC=clang     >> $GITHUB_ENV
+            echo CXX=clang++  >> $GITHUB_ENV
+        else
+            echo CC=gcc       >> $GITHUB_ENV
+            echo CXX=g++      >> $GITHUB_ENV
+        fi   
+
+
     - name: Put title for summary
       shell: bash
       run: |
@@ -80,6 +92,8 @@ runs:
         echo "- (debug) Root path: $ROOT_PATH" >> $GITHUB_STEP_SUMMARY
         echo "- (debug) Vcpkg path: $VCPKG_ROOT" >> $GITHUB_STEP_SUMMARY
         echo "- (debug) Toolchain path (if vcpkg is set): $TOOLCHAIN_ARGUMENT" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) CC: $CC" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) CXX: $CXX" >> $GITHUB_STEP_SUMMARY
 
     - name: Checkout if requested
       if: ${{ inputs.checkout == 'true' }}
