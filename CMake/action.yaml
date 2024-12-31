@@ -43,14 +43,14 @@ runs:
       run: |
         echo ============================== STEP: Environment setup ==============================
 
-        echo LOG_TXT='${{ github.workspace }}/____internal_logs.log'        >> $GITHUB_ENV
-        echo MAKE_TXT='${{ github.workspace }}/____internal_exec_logs.log'  >> $GITHUB_ENV
-        echo BUILD_DIR='${{ github.workspace }}/build_dir'                  >> $GITHUB_ENV
-        echo OUTPUT_DIR='${{ github.workspace }}/output_dir'                >> $GITHUB_ENV
+        echo LOG_TXT="\""'${{ github.workspace }}/____internal_logs.log'"\""        >> $GITHUB_ENV
+        echo MAKE_TXT="\""'${{ github.workspace }}/____internal_exec_logs.log'"\""  >> $GITHUB_ENV
+        echo BUILD_DIR="\""'${{ github.workspace }}/build_dir'"\""                  >> $GITHUB_ENV
+        echo OUTPUT_DIR="\""'${{ github.workspace }}/output_dir'"\""                >> $GITHUB_ENV
 
-        echo LOG_TXT='${{ github.workspace }}/____internal_logs.log'        >> $GITHUB_OUTPUT
-        echo MAKE_TXT='${{ github.workspace }}/____internal_exec_logs.log'  >> $GITHUB_OUTPUT
-        echo OUTPUT_DIR='${{ github.workspace }}/output_dir'                >> $GITHUB_OUTPUT
+        echo LOG_TXT="\""'${{ github.workspace }}/____internal_logs.log'"\""        >> $GITHUB_OUTPUT
+        echo MAKE_TXT="\""'${{ github.workspace }}/____internal_exec_logs.log'"\""  >> $GITHUB_OUTPUT
+        echo OUTPUT_DIR="\""'${{ github.workspace }}/output_dir'"\""                >> $GITHUB_OUTPUT
 
         echo "🔶 Setting up environment stuff..." 2>&1 | tee $LOG_TXT -a
 
@@ -60,7 +60,7 @@ runs:
 
         if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
           echo "🔶 USE_VCPKG enabled, set up TOOLCHAIN_ARGUMENT value" 2>&1 | tee $LOG_TXT -a
-          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+          echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE="\""$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake\"" >> $GITHUB_ENV
         fi
 
     - name: Put title for summary
@@ -74,7 +74,7 @@ runs:
         echo "- Kind of build: ${{ inputs.build_configuration }}" >> $GITHUB_STEP_SUMMARY
         echo "- Project full path: $PROJECT_PATH" >> $GITHUB_STEP_SUMMARY
         echo "- Artifact name: ${{ inputs.artifact_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Running on: ${{ runner.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Running on: ${{ runner.os }}" >> $GITHUB_STEP_SUMMARY
         echo "- (debug) Logs at: $LOG_TXT" >> $GITHUB_STEP_SUMMARY
         echo "- (debug) CMake logs at: $MAKE_TXT" >> $GITHUB_STEP_SUMMARY
         echo "- (debug) Build dir: $BUILD_DIR" >> $GITHUB_STEP_SUMMARY
