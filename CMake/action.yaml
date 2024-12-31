@@ -8,14 +8,15 @@ inputs:
   checkout:
     description: 'Should this checkout the project automagically?'
     required: false
-    default: 'false'
+    default: 'true'
   project_path:
     description: 'Project path to work on?'
     required: false
+    default: '.'
   upload_logs:
     description: 'Upload logs?'
     required: false
-    default: 'false'
+    default: 'true'
   artifact_name:
     description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs)'
     required: true
@@ -27,16 +28,23 @@ inputs:
     description: 'Downloads, builds latest vcpkg and installs it'
     required: false
     default: 'false'
-  cmake_vcpkg_easy:
-    description: 'Auto add config to CMake for VCPKG. Needs use_vcpkg enabled'
+  debug_everything:
+    description: 'Upload all files to check what''s going on'
     required: false
-    default: 'true'
-    
+    default: 'false'
+
+
+env:
+  LOG_TXT: '${{ github.workspace }}/____internal_logs.log'
+  MAKE_TXT: '${{ github.workspace }}/____internal_exec_logs.log'
+  BUILD_DIR: '${{ github.workspace }}/build_dir'
+  OUTPUT_DIR: '${{ github.workspace }}/output_dir'
   
 runs:
   using: composite
   steps:
     - name: Put title for summary
+      working-directory: ${{ inputs.project_path }}
       shell: bash
       run: |
         echo ============================== STEP: Summary and build setup ==============================
@@ -46,194 +54,135 @@ runs:
         echo "- Kind of build: ${{ inputs.build_configuration }}" >> $GITHUB_STEP_SUMMARY
         echo "- Project path: ${{ inputs.project_path }}" >> $GITHUB_STEP_SUMMARY
         echo "- Artifact name: ${{ inputs.artifact_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Running on: ${{ runner.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) Logs at: $LOG_TXT" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) CMake logs at: $MAKE_TXT" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) Build dir: $BUILD_DIR" >> $GITHUB_STEP_SUMMARY
+        echo "- (debug) Output dir: $OUTPUT_DIR" >> $GITHUB_STEP_SUMMARY
 
     - name: Checkout if requested
       if: ${{ inputs.checkout == 'true' }}
       uses: actions/checkout@main
       with:
         submodules: 'true'
+
+    - name: Setup environment variables
+      working-directory: ${{ inputs.project_path }}
+      shell: bash
+      run: |
+        echo ============================== STEP: Check and setup environment ==============================
         
-    - name: Setup MSVC if needed (automatic)
+        echo "🔶 Checking for CMakeLists.txt ..." 2>&1 | tee $LOG_TXT -a
+
+        if [[ ! -e "CMakeLists.txt" ]]; then
+          echo "CMakeLists.txt not found!!!"
+          exit 1
+        fi        
+
+        echo "🔶 Setting up environment stuff..." 2>&1 | tee $LOG_TXT -a
+
+        PROJECT_PATH=$PWD
+        ROOT_PATH='${{ github.workspace }}'
+        VCPKG_ROOT=$ROOT_PATH"/____internal_vcpkg"
+
+        echo "🔶 Starting log from here!" 2>&1 | tee $LOG_TXT -a
+  
+        if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
+          echo "🔶 USE_VCPKG enabled, set up TOOLCHAIN_ARGUMENT value" 2>&1 | tee $LOG_TXT -a
+          TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake"
+        fi
+
+
+        if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
+          echo "🔶 Working on CMakeLists.txt for VCPKG integration..." 2>&1 | tee $LOG_TXT -a
+          
+          echo "if (WIN32)" >> CMakeLists_new.txt
+          echo "  set(VCPKG_TARGET_TRIPLET \"x64-windows\" CACHE STRING \"\")" >> CMakeLists_new.txt
+          echo "elseif(UNIX AND NOT APPLE)" >> CMakeLists_new.txt
+          echo "  set(VCPKG_TARGET_TRIPLET \"x64-linux\" CACHE STRING \"\")" >> CMakeLists_new.txt
+          echo "else()" >> CMakeLists_new.txt
+          echo "  if(CMAKE_SYSTEM_PROCESSOR STREQUAL \"arm64\")" >> CMakeLists_new.txt
+          echo "    set(VCPKG_TARGET_TRIPLET \"arm64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
+          echo "  else()" >> CMakeLists_new.txt
+          echo "    set(VCPKG_TARGET_TRIPLET \"x64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
+          echo "  endif()" >> CMakeLists_new.txt
+          echo "endif()" >> CMakeLists_new.txt
+
+          cat CMakeLists.txt >> CMakeLists_new.txt
+
+          mv CMakeLists.txt CMakeLists_old.txt
+          mv CMakeLists_new.txt CMakeLists.txt
+
+          echo "🔶 CMakeLists.txt ready." 2>&1 | tee $LOG_TXT -a
+        fi
+        
+    - name: Setup MSVC (automatic)
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
-
-    - name: Append VCPKG to CMakeLists.txt automagically
-      if: ${{ inputs.use_vcpkg == 'true' && inputs.cmake_vcpkg_easy == 'true' }}
-      shell: bash
-      env:
-        WORK_PATH: ${{ inputs.project_path }}
-      run: |
-        echo ============================== STEP: VCPKG stuff ==============================
-        PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
-
-        echo "Accessing $PROJECT_PATH..."
-
-        cd $PROJECT_PATH
-
-        echo "Working on new CMakeLists.txt..."
-        
-        echo "if (WIN32)" >> CMakeLists_new.txt
-        echo "  set(VCPKG_TARGET_TRIPLET \"x64-windows\" CACHE STRING \"\")" >> CMakeLists_new.txt
-        echo "elseif(UNIX AND NOT APPLE)" >> CMakeLists_new.txt
-        echo "  set(VCPKG_TARGET_TRIPLET \"x64-linux\" CACHE STRING \"\")" >> CMakeLists_new.txt
-        echo "else()" >> CMakeLists_new.txt
-        echo "  set(VCPKG_TARGET_TRIPLET \"arm64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
-        echo "endif()" >> CMakeLists_new.txt
-
-        cat CMakeLists.txt >> CMakeLists_new.txt
-
-        echo "Shuffling stuff around..."
-
-        mv CMakeLists.txt CMakeLists_old.txt
-        mv CMakeLists_new.txt CMakeLists.txt
-
-        echo "Your new CMakeLists.txt:"
-        echo "========================================="
-        cat CMakeLists.txt
-        echo "========================================="
-
-        cd '${{ github.workspace }}'  
-        echo "Good!"
       
-    - name: Using VCPKG
+    - name: Install VCPKG
       if: ${{ inputs.use_vcpkg == 'true' }}
-      id: install-vcpkg
       shell: bash
-      env:
-        WORK_PATH: ${{ inputs.project_path }}
       run: |
-        PROJECT_PATH='${{ github.workspace }}'"/$WORK_PATH/"
-        echo "- Using VCPKG!" >> $GITHUB_STEP_SUMMARY
+        echo ============================== STEP: Install VCPKG automatically ==============================
 
-        if [[ ! -d "vcpkg" ]]; then
+        echo "🔶 Using VCPKG!" 2>&1 | tee $LOG_TXT -a
 
-          echo "Cloning vcpkg to "'${{ github.workspace }}'"/vcpkg"
+        if [[ -d $VCPKG_ROOT ]]; then
+          echo "🔶 Found "$VCPKG_ROOT" folder. Cleaning it for self install instead!" 2>&1 | tee $LOG_TXT -a
 
-          git clone https://github.com/microsoft/vcpkg.git '${{ github.workspace }}'/vcpkg
-
-        fi
-                  
-        echo "VCPKG_ROOT=\""'${{ github.workspace }}'"/vcpkg\"" >> $GITHUB_ENV
-        echo '${{ github.workspace }}'"/vcpkg" >> $GITHUB_PATH
-        echo "Current GITHUB_PATH: $GITHUB_PATH"
-        echo "Current PATH: $PATH"
-
-        echo "Setup..."
-
-        cd '${{ github.workspace }}'/vcpkg
-        
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-
-          ./bootstrap-vcpkg.sh -disableMetrics
-          # export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
-
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-
-          ./bootstrap-vcpkg.sh -disableMetrics
-          # export PATH='${{ github.workspace }}'"/vcpkg:$PATH"
-
-        elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-
-          ./bootstrap-vcpkg.bat -disableMetrics
-          # export PATH='${{ github.workspace }}'"/vcpkg;$PATH"
-
+          rm -rf $VCPKG_ROOT
         fi
 
-        echo "Installing packages..."
+        echo "🔶 Cloning vcpkg to "$VCPKG_ROOT 2>&1 | tee $LOG_TXT -a
 
-        cd $PROJECT_PATH
-        '${{ github.workspace }}'/vcpkg/vcpkg install 2>&1 | tee runner.txt -a;
-        cd '${{ github.workspace }}'
+        git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT
 
-        echo "Environment export (hopefully it works)..."
+        echo "🔶 Setting up vcpkg..."  2>&1 | tee $LOG_TXT -a
+
+        if [[ ${{ runner.os }} == "Windows" ]]; then
+          $VCPKG_ROOT/bootstrap-vcpkg.bat -disableMetrics
+        else
+          $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics
+        fi
+
+        echo "🔶 Installing vcpkg packages..." 2>&1 | tee $LOG_TXT -a
+
+        $VCPKG_ROOT/vcpkg install 2>&1 | tee $MAKE_TXT -a
         
-        export TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'"/vcpkg/scripts/buildsystems/vcpkg.cmake"
-
-        echo "Good!"
+        echo "🔶 vcpkg good!" 2>&1 | tee $LOG_TXT -a
 
     - name: Build Cmake manually
       shell: bash
+      working-directory: ${{ inputs.project_path }}
       env:
-        BUILD_DIR: build/${{ inputs.artifact_name }}
-        OUTPUT_DIR: built_executables/${{ inputs.artifact_name }}
-        LOGS_DIR: logs/${{ inputs.artifact_name }}
         BUILD_TYPE: ${{ inputs.build_configuration }}
         WORK_PATH: ${{ inputs.project_path }}
       run: |
         echo ============================== STEP: Building CMake ==============================
-
-        cd $WORK_PATH        
         
-        if [[ ${{ runner.os }} == "Windows" ]]; then
-            P_BUILD=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$BUILD_DIR
-            P_EXECS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$OUTPUT_DIR
-            P_LOGGS=$(echo "${{ runner.workspace }}" | sed 's/\\/\//g')/$LOGS_DIR
-            CC=cl
-            CXX=cl
-        elif [[ ${{ runner.os }} == "macOS" ]]; then
-            P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
-            P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
-            P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
-            CC=clang
-            CXX=clang++
-        else
-            P_BUILD=${{ runner.workspace }}/$BUILD_DIR;
-            P_EXECS=${{ runner.workspace }}/$OUTPUT_DIR;
-            P_LOGGS=${{ runner.workspace }}/$LOGS_DIR;
-            CC=gcc
-            CXX=g++
-        fi    
-        
-        echo "Cleaning up paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
-        rm -rf $P_BUILD;
-        rm -rf $P_EXECS;
-        rm -rf $P_LOGGS;
+        echo "🔶 Cleaning up paths "$BUILD_DIR" and "$OUTPUT_DIR 2>&1 | tee $LOG_TXT -a
+        rm -rf $BUILD_DIR
+        rm -rf $OUTPUT_DIR
 
-        echo "(Re)Creating paths [$P_BUILD; $P_EXECS, $P_LOGGS]";
-        mkdir -p $P_BUILD;
-        mkdir -p $P_EXECS;
-        mkdir -p $P_LOGGS;
+        echo "🔶 (Re)Creating path for build "$BUILD_DIR" and "$OUTPUT_DIR 2>&1 | tee $LOG_TXT -a
+        mkdir -p $BUILD_DIR
+        mkdir -p $OUTPUT_DIR
 
+        echo "🔶 Preparing CMake..." 2>&1 | tee $LOG_TXT -a
 
-        echo "Preparing CMake..."
-
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$P_EXECS -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -S . -B "$P_BUILD" --debug-output 2>&1 | tee runner.txt -a;   
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -S . -B $BUILD_DIR --debug-output 2>&1 | tee $MAKE_TXT -a
                 
-        echo "Running build CMake..."
-
+        echo "🔶 Running build CMake..." 2>&1 | tee $LOG_TXT -a
 
         if [[ ${{ runner.os }} == "Windows" ]]; then 
-            cmake --build $P_BUILD --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
-
-            #echo "Searching for build executables (.exe)..."
-
-            #find $P_BUILD -perm -111 -type f | grep -E ".*[\.exe]$|.*[\.dll]$" | grep -v -E ".*CompilerIdCXX\.exe$|.*CompilerIdC\.exe$|.*[\.pl]$" > execs.txt
+            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
         else 
-            cmake --build $P_BUILD ${{ inputs.extra_flags }} -v 2>&1 | tee runner.txt -a;
-
-            #echo "Searching for build executables (matches)..."
-
-            #cat runner.txt | grep Built | awk '{print $NF}' > raw_execs.txt;
-            #cp raw_execs.txt ${{ runner.workspace }}/logs 
-
-            # Filters .out and .bin and also filters by build output
-            #find $P_BUILD -perm -111 -type f | grep -v -E ".*[\.out]$|.*[\.bin]$" | grep $(<raw_execs.txt) > execs.txt
+            cmake --build $BUILD_DIR ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
         fi
-
-
-        #echo "Copying executables..."
-        #cat execs.txt
-
-        #cp $(ls $P_EXECS) $P_EXECS || true
-
-
-        echo "Copying logs..."
-
-        #cp execs.txt $P_LOGGS
-        cp runner.txt $P_LOGGS
         
-        echo "End!"
+        echo "🔶 End!" 2>&1 | tee $LOG_TXT -a
 
         echo ============================== STEP: Upload and save ==============================
 
@@ -241,14 +190,16 @@ runs:
       uses: actions/upload-artifact@main
       with:
         name: ${{ inputs.artifact_name }}
-        path: ${{ runner.workspace }}/built_executables/${{ inputs.artifact_name }}/
+        path: ${{ env.BUILD_DIR }}
 
     - if: ${{ inputs.upload_logs == 'true' && always() }}
       name: Save logs
       uses: actions/upload-artifact@main
       with:
         name: ${{ inputs.artifact_name }}_logs
-        path: ${{ runner.workspace }}/logs/${{ inputs.artifact_name }}/
+        path: |
+          ${{ env.LOG_TXT }}
+          ${{ env.MAKE_TXT }}
         
     - name: Finish summary with happy ending
       if: success()
@@ -260,4 +211,10 @@ runs:
       if: failure()
       shell: bash
       run: |
-        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
+        echo "### THE RUN ENDED WITH ISSUES! Check the log!" >> $GITHUB_STEP_SUMMARY
+    - name: Upload everything on debug
+      if: ${{ inputs.debug_everything == 'true' && always() }}
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ inputs.artifact_name }}_full_debug_upload
+        path: ${{ github.workspace }}
