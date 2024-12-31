@@ -108,11 +108,7 @@ runs:
           echo "elseif(UNIX AND NOT APPLE)" >> CMakeLists_new.txt
           echo "  set(VCPKG_TARGET_TRIPLET \"x64-linux\" CACHE STRING \"\")" >> CMakeLists_new.txt
           echo "else()" >> CMakeLists_new.txt
-          echo "  if(CMAKE_SYSTEM_PROCESSOR STREQUAL \"arm64\")" >> CMakeLists_new.txt
-          echo "    set(VCPKG_TARGET_TRIPLET \"arm64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
-          echo "  else()" >> CMakeLists_new.txt
-          echo "    set(VCPKG_TARGET_TRIPLET \"x64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
-          echo "  endif()" >> CMakeLists_new.txt
+          echo "  set(VCPKG_TARGET_TRIPLET \"arm64-osx\" CACHE STRING \"\")" >> CMakeLists_new.txt
           echo "endif()" >> CMakeLists_new.txt
 
           cat CMakeLists.txt >> CMakeLists_new.txt
