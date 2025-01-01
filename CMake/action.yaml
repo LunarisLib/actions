@@ -16,7 +16,7 @@ inputs:
   upload_logs:
     description: 'Upload logs?'
     required: false
-    default: 'true'
+    default: 'false'
   artifact_name:
     description: 'How to name this project outputs as Artifacts? (Logs will be called (this)_logs)'
     required: true
