@@ -34,6 +34,7 @@ jobs:
   
   publish-snapshot-test:
     runs-on: ubuntu-latest
+    needs: [ cmake-build, msvc-build ]
     steps:
       - uses: actions/checkout@v4
 
