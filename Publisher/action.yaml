@@ -61,8 +61,9 @@ runs:
       shell: bash
       run: |    
         cd root_publish_files_folder
-        ls -rtd */* | sed -e 's/\*$//' | while read line; do
-            mv $line $(sed -e 's/\//_/;s/\*$//' <<< $line)
+        find . -type f | sed -e 's/\*$//' | while read line; do
+          echo "Moving "$line" to root..."
+          mv $line $(sed -e 's/^\.\///;s/\//_/g' <<< $line)
         done
         rm -rf */
                 
