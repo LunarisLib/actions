@@ -192,9 +192,9 @@ runs:
         echo "🔶 Running build CMake..." 2>&1 | tee $LOG_TXT -a
 
         if [[ ${{ runner.os }} == "Windows" && -z $GG ]]; then 
-            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
+            cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE --parallel 4 ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
         else 
-            cmake --build $BUILD_DIR ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
+            cmake --build $BUILD_DIR --parallel 4 ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
         fi
         
         echo "🔶 End!" 2>&1 | tee $LOG_TXT -a
