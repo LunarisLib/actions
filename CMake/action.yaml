@@ -32,6 +32,10 @@ inputs:
     description: 'Upload all files to check what''s going on'
     required: false
     default: 'false'
+  use_mingw:
+    description: 'Use MinGW?'
+    required: false
+    default: 'false'
   
 runs:
   using: composite
@@ -62,15 +66,21 @@ runs:
         fi
 
         if [[ ${{ runner.os }} == "Windows" ]]; then
-            echo CC=cl                      >> $GITHUB_ENV
-            echo CXX=cl                     >> $GITHUB_ENV
-            echo VCPKG_TRIPLET=x64-windows  >> $GITHUB_ENV
+            if [[ ${{ inputs.use_mingw }} == "false" ]]; then
+              echo CC=cl                              >> $GITHUB_ENV
+              echo CXX=cl                             >> $GITHUB_ENV
+            else
+              echo CC=gcc                             >> $GITHUB_ENV
+              echo CXX=g++                            >> $GITHUB_ENV
+              echo GG="MinGW Makefiles"               >> $GITHUB_ENV
+            fi
+            echo VCPKG_TRIPLET=x64-windows            >> $GITHUB_ENV
         elif [[ ${{ runner.os }} == "macOS" ]]; then
             ARCH=$(uname -m)
             if [[ "$ARCH" == "arm64" ]]; then
-              echo VCPKG_TRIPLET="arm64-osx"  >> $GITHUB_ENV
+              echo VCPKG_TRIPLET="arm64-osx"          >> $GITHUB_ENV
             elif [[ "$ARCH" == "x86_64" ]]; then
-              echo VCPKG_TRIPLET="x64-osx"    >> $GITHUB_ENV
+              echo VCPKG_TRIPLET="x64-osx"            >> $GITHUB_ENV
             else
               echo "Unknown architecture: $ARCH"
               exit 1
@@ -114,6 +124,7 @@ runs:
         submodules: 'true'
         
     - name: Setup MSVC (automatic)
+      if: ${{ inputs.use_mingw == 'false' }}
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
@@ -172,11 +183,15 @@ runs:
 
         echo "🔶 Preparing CMake..." 2>&1 | tee $LOG_TXT -a
 
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET -S . -B $BUILD_DIR --debug-output 2>&1 | tee $MAKE_TXT -a
+        if [[ -n $GG ]]; then
+          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET $GG -S . -B $BUILD_DIR -G "$GG" --debug-output 2>&1 | tee $MAKE_TXT -a
+        else 
+          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET $GG -S . -B $BUILD_DIR --debug-output 2>&1 | tee $MAKE_TXT -a
+        fi
                 
         echo "🔶 Running build CMake..." 2>&1 | tee $LOG_TXT -a
 
-        if [[ ${{ runner.os }} == "Windows" ]]; then 
+        if [[ ${{ runner.os }} == "Windows" && -z $GG ]]; then 
             cmake --build $BUILD_DIR --target ALL_BUILD --config $BUILD_TYPE ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
         else 
             cmake --build $BUILD_DIR ${{ inputs.extra_flags }} -v 2>&1 | tee $MAKE_TXT -a
