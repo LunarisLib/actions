@@ -32,8 +32,8 @@ inputs:
     description: 'Upload all files to check what''s going on'
     required: false
     default: 'false'
-  use_msvc:
-    description: 'Use MSVC instead?'
+  use_mingw:
+    description: 'Use MinGW?'
     required: false
     default: 'false'
   
@@ -66,7 +66,7 @@ runs:
         fi
 
         if [[ ${{ runner.os }} == "Windows" ]]; then
-            if [[ ${{ inputs.use_msvc }} == "true" ]]; then
+            if [[ ${{ inputs.use_mingw }} == "false" ]]; then
               echo CC=cl                              >> $GITHUB_ENV
               echo CXX=cl                             >> $GITHUB_ENV
             else
@@ -124,7 +124,7 @@ runs:
         submodules: 'true'
         
     - name: Setup MSVC (automatic)
-      if: ${{ inputs.use_msvc == 'true' }}
+      if: ${{ inputs.use_mingw == 'false' }}
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
