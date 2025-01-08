@@ -8,8 +8,12 @@ jobs:
   cmake-build:
     strategy:
       matrix:
-        os: [ windows-latest, ubuntu-latest, macos-latest ]
-    runs-on: ${{ matrix.os }}
+        config:
+        - { os: windows-latest, mingw: 'false', name: Windows_MSVC }
+        - { os: windows-latest, mingw: 'true',  name: Windows_MinGW }
+        - { os: ubuntu-latest,  mingw: 'false', name: Ubuntu }
+        - { os: macos-latest,   mingw: 'false', name: MacOS }
+    runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +22,8 @@ jobs:
         with:
           checkout: 'false'
           project_path: ./.examples/CMake_project/
-          artifact_name: ${{ matrix.os }}_CMAKE_PROJECT
+          artifact_name: ${{ matrix.config.name }}_CMAKE_PROJECT
+          use_mingw: ${{ matrix.config.mingw }}
 
   msvc-build:
     runs-on: windows-latest
