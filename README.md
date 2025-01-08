@@ -4,10 +4,10 @@
 
 - Current version: **v0.0.0**
 - Current release candidate: **0**
-- Current snapshot build: **2**
-- Current snapshot name: **25w02b2**
-- Commit counter: **4**- Current version: **v0.0.0**
+- Current snapshot build: **3**
+- Current snapshot name: **25w02b3**
+- Commit counter: **5**- Current version: **v0.0.0**
 - Current release candidate: **0**
-- Current snapshot build: **2**
-- Current snapshot name: **25w02b2**
-- Commit counter: **4**
+- Current snapshot build: **3**
+- Current snapshot name: **25w02b3**
+- Commit counter: **5**
