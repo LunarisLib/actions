@@ -232,9 +232,7 @@ runs:
           --debug-output
         )
 
-        COMMAND="cmake ${CMAKE_ARGUMENTS[@]}"
-
-        "${COMMAND[@]}" 2>&1 | tee $MAKE_TXT -a
+        cmake "${CMAKE_ARGUMENTS[@]}" 2>&1 | tee $MAKE_TXT -a
                 
         echo "🔶 Running build CMake..." 2>&1 | tee $LOG_TXT -a
 
