@@ -39,7 +39,7 @@ inputs:
   add_libraries_to_path:
     description: 'Enforce export of libraries with executable?'
     required: false
-    default: 'false'
+    default: 'true'
   
 runs:
   using: composite
