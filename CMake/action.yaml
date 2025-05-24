@@ -193,6 +193,7 @@ runs:
 
         CMAKE_ARGUMENTS=(
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR
         )
 
         if [[ "$EXPORT_LIBS" == "1" ]]; then
