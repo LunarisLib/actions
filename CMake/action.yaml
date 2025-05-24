@@ -36,6 +36,10 @@ inputs:
     description: 'Use MinGW?'
     required: false
     default: 'false'
+  add_libraries_to_path:
+    description: 'Enforce export of libraries with executable?'
+    required: false
+    default: 'false'
   
 runs:
   using: composite
@@ -60,6 +64,10 @@ runs:
         echo ROOT_PATH='${{ github.workspace }}'                            >> $GITHUB_ENV
         echo VCPKG_ROOT='${{ github.workspace }}'/____internal_vcpkg        >> $GITHUB_ENV
         echo VCPKG_RELATIVE=____internal_vcpkg                              >> $GITHUB_ENV
+
+        if [[ ${{ inputs.add_libraries_to_path }} == "true" ]]; then
+          echo EXPORT_LIBS=1 >> $GITHUB_ENV
+        fi
 
         if [[ "${{ inputs.use_vcpkg }}" == "true" ]]; then
           echo TOOLCHAIN_ARGUMENT=-DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}'/____internal_vcpkg/scripts/buildsystems/vcpkg.cmake >> $GITHUB_ENV
@@ -183,21 +191,50 @@ runs:
 
         echo "🔶 Preparing CMake..." 2>&1 | tee $LOG_TXT -a
 
-        if [[ -n $GG ]]; then
+        CMAKE_ARGUMENTS=(
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+        )
 
-          if [[ -n $VCPKG_TRIPLET ]]; then
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET -S . -B $BUILD_DIR -G "$GG" --debug-output 2>&1 | tee $MAKE_TXT -a
-          else
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -S . -B $BUILD_DIR -G "$GG" --debug-output 2>&1 | tee $MAKE_TXT -a
-          fi
-          
-        else 
-          if [[ -n $VCPKG_TRIPLET ]]; then
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX $TOOLCHAIN_ARGUMENT -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET -S . -B $BUILD_DIR --debug-output 2>&1 | tee $MAKE_TXT -a
-          else
-            cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -S . -B $BUILD_DIR --debug-output 2>&1 | tee $MAKE_TXT -a
-          fi
+        if [[ "$EXPORT_LIBS" == "1" ]]; then
+          CMAKE_ARGUMENTS+=(
+            -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=$OUTPUT_DIR
+            -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$OUTPUT_DIR
+          )
         fi
+
+        CMAKE_ARGUMENTS+=(        
+          -DCMAKE_C_COMPILER=$CC
+          -DCMAKE_CXX_COMPILER=$CXX
+        )
+
+        if [[ -n $VCPKG_TRIPLET ]]; then
+          CMAKE_ARGUMENTS+=(
+            $TOOLCHAIN_ARGUMENT
+            -DVCPKG_TARGET_TRIPLET=$VCPKG_TRIPLET
+          )
+        fi
+
+        CMAKE_ARGUMENTS+=(
+          -S
+          .
+          -B
+          $BUILD_DIR
+        )
+
+        if [[ -n $GG ]]; then
+          CMAKE_ARGUMENTS+=(
+            -G
+            $GG
+          )
+        fi
+
+        CMAKE_ARGUMENTS+=(
+          --debug-output
+        )
+
+        COMMAND="cmake ${CMAKE_ARGUMENTS[@]}"
+
+        "${COMMAND[@]}" 2>&1 | tee $MAKE_TXT -a
                 
         echo "🔶 Running build CMake..." 2>&1 | tee $LOG_TXT -a
 
