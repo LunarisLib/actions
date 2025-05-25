@@ -31,7 +31,7 @@ jobs:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - if: ${{ inputs.use_experimental_branch == 'false' }}
+      - if: ${{ ! inputs.use_experimental_branch }}
         name: Build
         uses: LunarisLib/actions/CMake@master
         with:
@@ -39,7 +39,7 @@ jobs:
           project_path: ./.examples/CMake_project/
           artifact_name: ${{ matrix.os }}_PROJECT
           
-      - if: ${{ inputs.use_experimental_branch == 'true' }}
+      - if: ${{ inputs.use_experimental_branch }}
         name: Build
         uses: LunarisLib/actions/CMake@experimental
         with:
@@ -51,7 +51,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - if: ${{ inputs.use_experimental_branch == 'false' }}
+      - if: ${{ ! inputs.use_experimental_branch }}
         name: Versioning
         id: versioning
         uses: LunarisLib/actions/Versioning@master
@@ -59,7 +59,7 @@ jobs:
           kind: ${{ inputs.bump_type }}
           project: CMAKE_PROJECT
 
-      - if: ${{ inputs.use_experimental_branch == 'true' }}
+      - if: ${{ inputs.use_experimental_branch }}
         name: Versioning
         id: versioning-ex
         uses: LunarisLib/actions/Versioning@experimental
@@ -68,7 +68,7 @@ jobs:
           project: CMAKE_PROJECT
 
           
-      - if: ${{ inputs.use_experimental_branch == 'false' }}
+      - if: ${{ ! inputs.use_experimental_branch }}
         name: Publish
         uses: LunarisLib/actions/Publisher@master
         with:
@@ -77,7 +77,7 @@ jobs:
           tag_name: ${{ steps.versioning.outputs.version }}_CMAKE
           prerelease: ${{ inputs.make_prerelease }}
 
-      - if: ${{ inputs.use_experimental_branch == 'true' }}
+      - if: ${{ inputs.use_experimental_branch }}
         name: Publish
         uses: LunarisLib/actions/Publisher@experimental
         with:
