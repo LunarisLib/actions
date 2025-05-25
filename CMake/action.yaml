@@ -45,7 +45,7 @@ runs:
   using: composite
   steps:
     - name: Setup environment variables # GITHUB_ENV is only "valid" one step after being set
-      working-directory: ${{ inputs.project_path }}
+      #working-directory: ${{ inputs.project_path }}
       id: my-vars
       shell: bash
       run: |
