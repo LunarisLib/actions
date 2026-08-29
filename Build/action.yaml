@@ -1,6 +1,9 @@
 name: 'Build with CMake'
 description: 'Build project'
 inputs:
+  compiler:
+    description: 'What compiler? (gcc, mingw, msvc)'
+    required: true
   shell:
     description: 'The shell to execute steps'
     required: false
@@ -17,6 +20,36 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Setup Linux
+      shell: ${{ inputs.shell }}
+      if: inputs.compiler == 'gcc'
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-14 g++-14 ninja-build cmake
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+
+    - name: Setup Windows MSVC
+      if: inputs.compiler == 'msvc'
+      shell: ${{ inputs.shell }}
+      run: |
+        choco install ninja --no-progress
+
+    - name: Setup Windows MSVC part 2
+      uses: ilammy/msvc-dev-cmd@v1
+      if: inputs.compiler == 'msvc'
+
+    - name: Setup Windows MinGW
+      if: inputs.compiler == 'mingw'
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-ninja
+
+
     - name: Configure Release
       shell: ${{ inputs.shell }}
       run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -30,26 +63,26 @@ runs:
       shell: ${{ inputs.shell }}
       run: cmake --install build --parallel 4 --prefix install
 
-    - name: Archive install
+    - name: Archive install for upload
       if: inputs.install
       shell: ${{ inputs.shell }}
       run: |
-          if [ "${{ matrix.archive_ext }}" = "tar.gz" ]; then
-              tar -czf lunaris-${{ matrix.os }}-${{ matrix.compiler }}.tar.gz install
+          if [ "$RUNNER_OS" != "Windows" ]; then
+              tar -czf lunaris-${{ runner.os }}-${{ inputs.compiler }}.tar.gz install
           else
-              powershell Compress-Archive -Path install\* -DestinationPath lunaris-${{ matrix.os }}-${{ matrix.compiler }}.zip
+              powershell Compress-Archive -Path install\* -DestinationPath lunaris-${{ runner.os }}-${{ inputs.compiler }}.zip
           fi
 
-    - name: Upload install
+    - name: Upload install release
       if: inputs.install
       uses: actions/upload-artifact@v4
       with:
-        name: lunaris-${{ matrix.os }}-${{ matrix.compiler }}
+        name: lunaris-${{ runner.os }}-${{ inputs.compiler }}
         path: |
           *.tar.gz
           *.zip
 
-    - name: Test Ubuntu
+    - name: Test
       shell: ${{ inputs.shell }}
       if: inputs.test
       run: ctest --test-dir build --output-on-failure --verbose
