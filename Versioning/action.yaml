@@ -43,16 +43,6 @@ runs:
         USERNAME: Lunaris Lib Versioning Action
         REQ: ${{ inputs.kind }}
       run: |
-        echo "## 🌝 LunarisLib/actions/Versioning" >> $GITHUB_STEP_SUMMARY
-
-        echo "*This is the log output for this action:*" >> $GITHUB_STEP_SUMMARY
-        echo "- Temp folder used: $TEMP_FOLDER" >> $GITHUB_STEP_SUMMARY
-        echo "- Versioning folder used: $VERSIONING_FOLDER" >> $GITHUB_STEP_SUMMARY
-        echo "- Versioning branch used: $VERSIONING_BRANCH" >> $GITHUB_STEP_SUMMARY
-        echo "- Kind of versioning in this run: $REQ" >> $GITHUB_STEP_SUMMARY
-
-        printf "🌝 ==================== Begin of the run ==================== 🌝\n"
-
         printf "🌝 Configuring user, token, and stuff...\n"
 
         git config --global user.email "$EMAIL"
@@ -70,8 +60,8 @@ runs:
         printf "🌝 Moving things around...\n"
 
         ORIGINAL_FILES=$(ls -A)
-        mkdir -p $TEMP_FOLDER
-        mv $ORIGINAL_FILES $TEMP_FOLDER
+        mkdir -p "$TEMP_FOLDER"
+        mv "$ORIGINAL_FILES" "$TEMP_FOLDER"
 
         cp -a "$TEMP_FOLDER/.git" ./
         
@@ -81,19 +71,19 @@ runs:
 
         if [[ -n "$FIND_BRANCH" ]]; then         
             printf "🌝 Checking out branch...\n"
-            git checkout $VERSIONING_BRANCH
+            git checkout "$VERSIONING_BRANCH"
 
             printf "🌝 Branch exists, pull...\n"
-            git pull origin $VERSIONING_BRANCH
-            cd $VERSIONING_FOLDER
+            git pull origin "$VERSIONING_BRANCH"
+            cd "$VERSIONING_FOLDER"
         else            
             printf "🌝 New branch! Checking out branch and working on it...\n"
-            git checkout --orphan $VERSIONING_BRANCH
+            git checkout --orphan "$VERSIONING_BRANCH"
             
             printf "$TEMP_FOLDER/" > .gitignore
 
-            mkdir $VERSIONING_FOLDER
-            cd $VERSIONING_FOLDER
+            mkdir "$VERSIONING_FOLDER"
+            cd "$VERSIONING_FOLDER"
 
             printf "0" > major.txt
             printf "0" > minor.txt
@@ -191,11 +181,11 @@ runs:
         
         printf "🌝 Pushing...\n"
 
-        git push -u origin $VERSIONING_BRANCH        
+        git push -u origin "$VERSIONING_BRANCH"
         
         printf "🌝 Moving things back...\n"
         
-        rm -rf $VERSIONING_FOLDER
+        rm -rf "$VERSIONING_FOLDER"
         rm -rf .git
         rm .gitignore
         mv $(ls -A "$TEMP_FOLDER" | sed -e 's/^/'"$TEMP_FOLDER"'\//') .
@@ -204,13 +194,8 @@ runs:
 
         printf "🌝 ====================  End of the run  ==================== 🌝\n"
         
-    - name: Finish summary with happy ending
-      if: success()
-      shell: bash
-      run: |
-        echo "#### The run ended with no issues ;P" >> $GITHUB_STEP_SUMMARY
     - name: Log errors if no success instead
       if: failure()
       shell: bash
       run: |
-        echo "### The run ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY
+        echo "### The Versioning ended with issues! Check the log!" >> $GITHUB_STEP_SUMMARY

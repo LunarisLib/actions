@@ -1,0 +1,29 @@
+name: 'Install Allegro 5 on Windows/Linux'
+description: 'Quick installation to enable linking on any OS'
+inputs:
+  os:
+    description: 'Which OS? (windows-latest, ubuntu-latest)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup 7-Zip
+      uses: milliewalky/setup-7-zip@v2
+    
+    - name: Setup Linux dependencies and resources
+      if: inputs.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        # Setup Allegro
+
+        sudo apt-get update
+        sudo apt-get install -y liballegro5-dev
+
+    - name: Setup Windows dependencies and resources
+      if: inputs.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        # Setup Allegro
+
+        vcpkg install allegro5:x64-windows

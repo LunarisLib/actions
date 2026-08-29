@@ -1,0 +1,55 @@
+name: 'Build with CMake'
+description: 'Build project'
+inputs:
+  shell:
+    description: 'The shell to execute steps'
+    required: false
+    default: 'bash'
+  install:
+    description: 'Create install?'
+    required: false
+    default: false
+  test:
+    description: 'Run CTest?'
+    required: false
+    default: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure Release
+      shell: ${{ inputs.shell }}
+      run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      shell: ${{ inputs.shell }}
+      run: cmake --build build --parallel 4
+
+    - name: Create install (for those that may want a lib pre-installed)
+      if: inputs.install
+      shell: ${{ inputs.shell }}
+      run: cmake --install build --parallel 4 --prefix install
+
+    - name: Archive install
+      if: inputs.install
+      shell: ${{ inputs.shell }}
+      run: |
+          if [ "${{ matrix.archive_ext }}" = "tar.gz" ]; then
+              tar -czf lunaris-${{ matrix.os }}-${{ matrix.compiler }}.tar.gz install
+          else
+              powershell Compress-Archive -Path install\* -DestinationPath lunaris-${{ matrix.os }}-${{ matrix.compiler }}.zip
+          fi
+
+    - name: Upload install
+      if: inputs.install
+      uses: actions/upload-artifact@v4
+      with:
+        name: lunaris-${{ matrix.os }}-${{ matrix.compiler }}
+        path: |
+          *.tar.gz
+          *.zip
+
+    - name: Test Ubuntu
+      shell: ${{ inputs.shell }}
+      if: inputs.test
+      run: ctest --test-dir build --output-on-failure --verbose
