@@ -20,15 +20,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Setup Linux
-      shell: ${{ inputs.shell }}
-      if: inputs.compiler == 'gcc'
-      run: |
-        sudo apt update
-        sudo apt install -y gcc-14 g++-14 ninja-build cmake
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-
     - name: Setup Windows MSVC
       if: inputs.compiler == 'msvc'
       shell: ${{ inputs.shell }}
@@ -49,8 +40,13 @@ runs:
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
 
+    - name: Configure Release
+      if: inputs.compiler == 'gcc'
+      shell: ${{ inputs.shell }}
+      run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15 # for this to work, minimum required ubuntu: ubuntu-26.04
 
     - name: Configure Release
+      if: inputs.compiler != 'gcc'
       shell: ${{ inputs.shell }}
       run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
