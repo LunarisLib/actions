@@ -11,22 +11,22 @@ runs:
     - name: Setup Windows MSVC packages for Allegro 5
       if: inputs.compiler == 'msvc'
       shell: bash
-      run: >-
-        vcpkg install --triplet x64-windows-static
-          bzip2
-          freetype[core]
-          libflac
-          libjpeg-turbo
-          libogg
-          libpng
-          libtheora
-          libvorbis
-          libwebp[core]
-          minimp3
-          openal-soft
-          opus
-          opusfile
-          physfs
+      run: |
+        vcpkg install --triplet x64-windows-static \
+          bzip2 \
+          freetype[core] \
+          libflac \
+          libjpeg-turbo \
+          libogg \
+          libpng \
+          libtheora \
+          libvorbis \
+          libwebp[core] \
+          minimp3 \
+          openal-soft \
+          opus \
+          opusfile \
+          physfs \
           zlib
 
     - name: Setup Windows MinGW packages for Allegro 5
@@ -55,25 +55,25 @@ runs:
     - name: Setup Ubuntu packages for Allegro 5
       if: inputs.compiler == 'gcc'
       shell: bash
-      run: >-
-        sudo apt-get update &&
-        sudo apt-get install -qq -y -o=Dpkg::Use-Pty=0
-          xvfb
-          libvorbis-dev
-          libtheora-dev
-          libwebp-dev
-          libphysfs-dev
-          libopusfile-dev
-          libdumb1-dev
-          libflac-dev
-          libpulse-dev
-          libgtk-3-dev
-          pandoc
-          libcurl4-openssl-dev
-          libenet-dev
-          pulseaudio
-          libasound2-dev
-          libopenal-dev
-          libgl1-mesa-dev
-          libglu-dev
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -qq -y -o=Dpkg::Use-Pty=0 \
+          xvfb \
+          libvorbis-dev \
+          libtheora-dev \
+          libwebp-dev \
+          libphysfs-dev \
+          libopusfile-dev \
+          libdumb1-dev \
+          libflac-dev \
+          libpulse-dev \
+          libgtk-3-dev \
+          pandoc \
+          libcurl4-openssl-dev \
+          libenet-dev \
+          pulseaudio \
+          libasound2-dev \
+          libopenal-dev \
+          libgl1-mesa-dev \
+          libglu-dev \
           libopenmpt-dev
