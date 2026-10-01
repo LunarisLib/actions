@@ -12,6 +12,10 @@ inputs:
     description: 'Create install?'
     required: false
     default: false
+  upload_executable:
+    description: 'Package and upload standalone executable?'
+    required: false
+    default: true
   test:
     description: 'Run CTest?'
     required: false
@@ -54,6 +58,8 @@ runs:
       shell: ${{ inputs.shell }}
       run: cmake --build build --parallel 4
 
+      # Install part:
+
     - name: Create install (for those that may want a lib pre-installed)
       if: inputs.install
       shell: ${{ inputs.shell }}
@@ -77,6 +83,32 @@ runs:
         path: |
           *.tar.gz
           *.zip
+
+    # Standalone / monolith part:
+
+    - name: Stage Executable
+      if: inputs.upload_executable == true
+      shell: ${{ inputs.shell }}
+      run: cmake --install build --prefix dist
+
+    - name: Archive Executable
+      if: inputs.upload_executable == true
+      shell: ${{ inputs.shell }}
+      run: |
+        if [ "$RUNNER_OS" != "Windows" ]; then
+          tar -czf bin-${{ runner.os }}-${{ inputs.compiler }}.tar.gz -C dist/bin .
+        else
+          powershell Compress-Archive -Path dist\bin\* -DestinationPath bin-${{ runner.os }}-${{ inputs.compiler }}.zip
+        fi
+
+    - name: Upload Executable Artifact
+      if: inputs.upload_executable == true
+      uses: actions/upload-artifact@v4
+      with:
+        name: executable-${{ runner.os }}-${{ inputs.compiler }}
+        path: |
+          bin-*.tar.gz
+          bin-*.zip
 
     - name: Test
       shell: ${{ inputs.shell }}
