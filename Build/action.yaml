@@ -39,6 +39,8 @@ runs:
       uses: msys2/setup-msys2@v2
       with:
         msystem: UCRT64
+        release: false
+        location: 'C:\msys64'
         update: true
         install: >
           mingw-w64-ucrt-x86_64-gcc
