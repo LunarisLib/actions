@@ -27,7 +27,8 @@ runs:
           opus \
           opusfile \
           physfs \
-          zlib
+          zlib \
+          directxsdk
 
     - name: Setup Windows MinGW packages for Allegro 5
       if: inputs.compiler == 'mingw'      
