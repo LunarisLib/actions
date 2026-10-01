@@ -5,7 +5,7 @@ inputs:
     description: 'What compiler? (gcc, mingw, msvc)'
     required: true
   shell:
-    description: 'The shell to execute steps'
+    description: 'The shell to execute steps (bash or msys2)'
     required: false
     default: 'bash'
   install:
@@ -38,21 +38,51 @@ runs:
       if: inputs.compiler == 'mingw'
       uses: msys2/setup-msys2@v2
       with:
+        msystem: MINGW64
         update: true
         install: >
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
 
-    - name: Configure Release
+    - name: Configure Release (GCC)
       if: inputs.compiler == 'gcc'
       shell: ${{ inputs.shell }}
-      run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15 # for this to work, minimum required ubuntu: ubuntu-26.04
+      run: |
+        EXTRA_ARGS=""
+        VCPKG_ROOT_DIR="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+        VCPKG_CMAKE="$VCPKG_ROOT_DIR/scripts/buildsystems/vcpkg.cmake"
 
-    - name: Configure Release
+        if [ -f "$VCPKG_CMAKE" ]; then
+          if [ -f "vcpkg.json" ] || [ -d "$VCPKG_ROOT_DIR/installed/x64-linux" ]; then
+            EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_CMAKE"
+          fi
+        fi
+
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15 $EXTRA_ARGS
+
+    - name: Configure Release (MSVC / MINGW)
       if: inputs.compiler != 'gcc'
       shell: ${{ inputs.shell }}
-      run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      run: |
+        EXTRA_ARGS=""
+        VCPKG_ROOT_DIR="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+        VCPKG_CMAKE="$VCPKG_ROOT_DIR/scripts/buildsystems/vcpkg.cmake"
+
+        if [ -f "$VCPKG_CMAKE" ]; then
+          if [ -f "vcpkg.json" ]; then
+            EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_CMAKE"
+            if [ "${{ inputs.compiler }}" = "msvc" ]; then
+              EXTRA_ARGS="$EXTRA_ARGS -DVCPKG_TARGET_TRIPLET=x64-windows-static"
+            fi
+          elif [ -d "$VCPKG_ROOT_DIR/installed/x64-windows-static" ]; then
+            EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_CMAKE -DVCPKG_TARGET_TRIPLET=x64-windows-static"
+          elif [ -d "$VCPKG_ROOT_DIR/installed/x64-windows" ]; then
+            EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_CMAKE"
+          fi
+        fi
+
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release $EXTRA_ARGS
 
     - name: Build
       shell: ${{ inputs.shell }}
