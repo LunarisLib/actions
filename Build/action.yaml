@@ -123,24 +123,13 @@ runs:
       shell: ${{ inputs.shell }}
       run: cmake --install build --prefix dist
 
-    - name: Archive Executable
-      if: inputs.upload_executable == true
-      shell: ${{ inputs.shell }}
-      run: |
-        if [ "$RUNNER_OS" != "Windows" ]; then
-          tar -czf bin-${{ runner.os }}-${{ inputs.compiler }}.tar.gz -C dist/bin .
-        else
-          powershell Compress-Archive -Path dist\bin\* -DestinationPath bin-${{ runner.os }}-${{ inputs.compiler }}.zip
-        fi
-
     - name: Upload Executable Artifact
       if: inputs.upload_executable == true
       uses: actions/upload-artifact@v4
       with:
-        name: executable-${{ runner.os }}-${{ inputs.compiler }}
+        name: app-${{ runner.os }}-${{ inputs.compiler }}
         path: |
-          bin-*.tar.gz
-          bin-*.zip
+          install/bin/*
 
     - name: Test
       shell: ${{ inputs.shell }}
