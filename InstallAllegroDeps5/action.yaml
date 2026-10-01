@@ -33,23 +33,24 @@ runs:
       if: inputs.compiler == 'mingw'      
       uses: msys2/setup-msys2@v2
       with:
-        update: false
+        msystem: UCRT64
+        update: true
         install: >-
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-ninja
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja
           make
-          mingw-w64-x86_64-physfs
-          mingw-w64-x86_64-freetype
-          mingw-w64-x86_64-libvorbis
-          mingw-w64-x86_64-flac
-          mingw-w64-x86_64-dumb
-          mingw-w64-x86_64-libtheora
-          mingw-w64-x86_64-libjpeg-turbo
-          mingw-w64-x86_64-opusfile
-          mingw-w64-x86_64-enet
-          mingw-w64-x86_64-libwebp
-          mingw-w64-x86_64-libopenmpt
+          mingw-w64-ucrt-x86_64-physfs
+          mingw-w64-ucrt-x86_64-freetype
+          mingw-w64-ucrt-x86_64-libvorbis
+          mingw-w64-ucrt-x86_64-flac
+          mingw-w64-ucrt-x86_64-dumb
+          mingw-w64-ucrt-x86_64-libtheora
+          mingw-w64-ucrt-x86_64-libjpeg-turbo
+          mingw-w64-ucrt-x86_64-opusfile
+          mingw-w64-ucrt-x86_64-enet
+          mingw-w64-ucrt-x86_64-libwebp
+          mingw-w64-ucrt-x86_64-libopenmpt
         
     - name: Setup Ubuntu packages for Allegro 5
       if: inputs.compiler == 'gcc'
