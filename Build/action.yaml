@@ -137,7 +137,7 @@ runs:
       run: |
         Set-Service -Name Audiosrv -StartupType Automatic
         Start-Service -Name Audiosrv
-        choco install vbcable --no-progress -y
+        choco install vb-cable --no-progress -y
 
     - name: Test on Windows
       shell: ${{ inputs.shell }}
