@@ -131,13 +131,43 @@ runs:
         path: |
           install/bin/*
     
-    - name: Test on Windows (Setup)
+    - name: Test on Windows (Setup audio)
       if: inputs.test && runner.os == 'Windows'
       shell: powershell
       run: |
-        Set-Service -Name Audiosrv -StartupType Automatic
-        Start-Service -Name Audiosrv
-        choco install vb-cable --no-progress -y
+        Get-CimInstance Win32_SoundDevice | fl *
+
+        # 1. Enable and start Windows Audio services
+        Get-Service -Name "Audiosrv", "AudioEndpointBuilder" | Set-Service -StartupType Automatic
+        Get-Service -Name "Audiosrv", "AudioEndpointBuilder" | Start-Service
+
+        # 2. Download and extract Scream using native PowerShell Expand-Archive
+        Invoke-WebRequest -Uri "https://github.com/duncanthrax/scream/releases/download/4.0/Scream4.0.zip" -OutFile "C:\Scream4.0.zip"
+        Expand-Archive -Path "C:\Scream4.0.zip" -DestinationPath "C:\Scream" -Force
+
+        # 3. Locate driver files
+        $sysFile = (Get-ChildItem -Path "C:\Scream" -Filter "Scream.sys" -Recurse | Select-Object -First 1).FullName
+        $infFile = (Get-ChildItem -Path "C:\Scream" -Filter "Scream.inf" -Recurse | Select-Object -First 1).FullName
+
+        # 4. Import the driver certificate
+        $cert = (Get-AuthenticodeSignature $sysFile).SignerCertificate
+        $store = [System.Security.Cryptography.X509Certificates.X509Store]::new("TrustedPublisher", "LocalMachine")
+        $store.Open("ReadWrite")
+        $store.Add($cert)
+        $store.Close()
+
+        # 5. Search for pre-installed devcon.exe in Windows SDK on GitHub Runner
+        $devcon = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Filter "devcon.exe" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1).FullName
+
+        if ($devcon) {
+            Write-Host "Installing via devcon: $devcon"
+            & $devcon install $infFile *Scream
+        } else {
+            Write-Host "devcon.exe not found. Installing via built-in pnputil.exe..."
+            pnputil.exe /add-driver $infFile /install
+        }
+
+        Get-CimInstance Win32_SoundDevice | fl *
 
     - name: Test on Windows
       shell: ${{ inputs.shell }}
