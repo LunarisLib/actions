@@ -131,7 +131,14 @@ runs:
         path: |
           install/bin/*
 
-    - name: Test
+    - name: Test on Windows
       shell: ${{ inputs.shell }}
-      if: inputs.test
+      if: inputs.test && inputs.compiler != 'gcc'
       run: ctest --test-dir build --output-on-failure --verbose
+
+    - name: Test on Linux
+      shell: ${{ inputs.shell }}
+      if: inputs.test && inputs.compiler == 'gcc'
+      run: |
+        sudo apt install -y xvfb # Allow fake display
+        xvfb-run --auto-servernum ctest --test-dir build --output-on-failure --verbose
