@@ -48,7 +48,7 @@ runs:
           mingw-w64-ucrt-x86_64-ninja
 
     - name: Configure Release (GCC)
-      if: inputs.compiler == 'gcc'
+      if: runner.os == 'Linux'
       shell: ${{ inputs.shell }}
       run: |
         EXTRA_ARGS=""
@@ -64,7 +64,7 @@ runs:
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15 $EXTRA_ARGS
 
     - name: Configure Release (MSVC / MINGW)
-      if: inputs.compiler != 'gcc'
+      if: runner.os == 'Windows'
       shell: ${{ inputs.shell }}
       run: |
         EXTRA_ARGS=""
@@ -130,15 +130,23 @@ runs:
         name: app-${{ runner.os }}-${{ inputs.compiler }}
         path: |
           install/bin/*
+    
+    - name: Test on Windows (Setup)
+      if: inputs.test && runner.os == 'Windows'
+      shell: powershell
+      run: |
+        Set-Service -Name Audiosrv -StartupType Automatic
+        Start-Service -Name Audiosrv
+        choco install vb-audio-virtual-cable --no-progress -y
 
     - name: Test on Windows
       shell: ${{ inputs.shell }}
-      if: inputs.test && inputs.compiler != 'gcc'
+      if: inputs.test && runner.os == 'Windows'
       run: ctest --test-dir build --output-on-failure --verbose
 
     - name: Test on Linux
       shell: ${{ inputs.shell }}
-      if: inputs.test && inputs.compiler == 'gcc'
+      if: inputs.test && runner.os == 'Linux'
       run: |
         sudo apt install -y xvfb # Allow fake display
 
