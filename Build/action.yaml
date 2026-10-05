@@ -141,4 +141,17 @@ runs:
       if: inputs.test && inputs.compiler == 'gcc'
       run: |
         sudo apt install -y xvfb # Allow fake display
+
+        # Make sound work
+        cat << 'EOF' > ~/.asoundrc
+        pcm.!default {
+            type dummy
+        }
+        ctl.!default {
+            type dummy
+        }
+        EOF
+        pulseaudio --start --exit-idle-time=-1 || true
+        pactl load-module module-null-sink sink_name=dummy || true
+
         xvfb-run --auto-servernum ctest --test-dir build --output-on-failure --verbose
