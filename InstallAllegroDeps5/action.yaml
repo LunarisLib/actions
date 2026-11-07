@@ -18,6 +18,7 @@ runs:
           libflac \
           libjpeg-turbo \
           libogg \
+          libpsl[libicu] \
           libpng \
           libtheora \
           libvorbis \
