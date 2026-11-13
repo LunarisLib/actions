@@ -4,9 +4,22 @@ description: 'Quick installation to enable build of SDL3 and libcurl with it'
 runs:
   using: composite
   steps:
+    - name: Cache dependencies
+      uses: actions/cache@v6
+      with:
+        path: |
+          ${{ github.workspace }}/vcpkg-binary-cache
+          /var/cache/apt/archives
+          ~/Library/Caches/Homebrew
+        key: deps-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/vcpkg.json') }}
+        restore-keys: |
+          deps-${{ runner.os }}-
+
     - name: Setup Windows MSVC packages
       if: runner.os == 'Windows'
       shell: bash
+      env:
+          VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-binary-cache
       run: |
         vcpkg install --triplet x64-windows-static \
             zlib \
@@ -87,6 +100,6 @@ runs:
       with:
         options: |
           CMAKE_BUILD_TYPE=Release
-          ${{ runner.os == 'Windows' && format('CMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_INSTALLATION_ROOT) || '' }}
+          ${{ runner.os == 'Windows' && 'CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
           ${{ runner.os == 'Windows' && 'VCPKG_TARGET_TRIPLET=x64-windows-static' || '' }}
         build-args: --config Release
