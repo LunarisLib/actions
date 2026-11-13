@@ -87,4 +87,6 @@ runs:
       with:
         options: |
           CMAKE_BUILD_TYPE=Release
+          ${{ runner.os == 'Windows' && format('CMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_INSTALLATION_ROOT) || '' }}
+          ${{ runner.os == 'Windows' && 'VCPKG_TARGET_TRIPLET=x64-windows-static' || '' }}
         build-args: --config Release
