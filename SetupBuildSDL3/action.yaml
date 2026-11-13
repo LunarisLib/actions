@@ -1,0 +1,87 @@
+name: 'Install fancy SDL3 and libcurl dependencies here'
+description: 'Quick installation to enable build of SDL3 and libcurl with it'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Windows MSVC packages
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        vcpkg install --triplet x64-windows-static \
+          zlib \
+          brotli \
+          zstd \
+          nghttp2 \
+          libpsl \
+          freetype \
+          harfbuzz \
+          libpng \
+          libwebp \
+          libtiff \
+          libjpeg-turbo
+        
+    - name: Setup Ubuntu packages
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -qq -y -o=Dpkg::Use-Pty=0 \
+          build-essential \
+          cmake \
+          ninja-build \
+          pkg-config \
+          libasound2-dev \
+          libpulse-dev \
+          libaudio-dev \
+          libjack-dev \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libxinerama-dev \
+          libxxf86vm-dev \
+          libxss-dev \
+          libgl1-mesa-dev \
+          libgles2-mesa-dev \
+          libegl1-mesa-dev \
+          libwayland-dev \
+          libdecor-0-dev \
+          liburing-dev \
+          libsndio-dev \
+          libdbus-1-dev \
+          libvulkan-dev \
+          libxkbcommon-dev \
+          libibus-1.0-dev \
+          libusb-1.0-0-dev \
+          libxtst-dev \ 
+          libfreetype6-dev \
+          libharfbuzz-dev \
+          libpng-dev \
+          libwebp-dev \
+          libtiff-dev \
+          libjpeg-dev
+
+    - name: Setup macOS Environment
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install \
+          zstd \
+          brotli \
+          nghttp2 \
+          libpsl \
+          freetype \
+          harfbuzz \
+          libpng \
+          webp \
+          libtiff \
+          jpeg
+
+    - name: Build Project
+      uses: threeal/cmake-action@v2.1.0
+      with:
+        options: |
+          CMAKE_BUILD_TYPE=Release
+        build-args: --config Release
