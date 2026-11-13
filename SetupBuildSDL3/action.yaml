@@ -11,9 +11,8 @@ runs:
         vcpkg install --triplet x64-windows-static \
             zlib \
             brotli \
-            zstd \
             nghttp2 \
-            libpsl \
+            libidn2 \
             freetype \
             harfbuzz \
             libpng \
