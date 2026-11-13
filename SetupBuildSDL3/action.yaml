@@ -61,7 +61,10 @@ runs:
             libpng-dev \
             libwebp-dev \
             libtiff-dev \
-            libjpeg-dev
+            libjpeg-dev \
+            libpsl-dev \
+            libidn2-dev \
+            libnghttp2-dev
 
     - name: Setup macOS Environment
       if: runner.os == 'macOS'
