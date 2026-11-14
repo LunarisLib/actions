@@ -12,6 +12,7 @@ runs:
             zlib \
             brotli \
             nghttp2 \
+            zstd \
             libidn2 \
             freetype \
             harfbuzz \
@@ -61,9 +62,11 @@ runs:
             libwebp-dev \
             libtiff-dev \
             libjpeg-dev \
-            libpsl-dev \
             libidn2-dev \
-            libnghttp2-dev
+            libnghttp2-dev \
+            libbrotli-dev \
+            libzstd-dev \
+            zlib1g-dev
 
     - name: Setup macOS Environment
       if: runner.os == 'macOS'
@@ -79,6 +82,7 @@ runs:
             libpng \
             webp \
             libtiff \
+            libidn2 \
             jpeg
 
     - name: Build Project
