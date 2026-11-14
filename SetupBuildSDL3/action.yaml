@@ -4,11 +4,16 @@ description: 'Quick installation to enable build of SDL3 and libcurl with it'
 runs:
   using: composite
   steps:
+
+# Setup env things
+
     - name: Setup Windows MSVC packages
       if: runner.os == 'Windows'
       shell: bash
       run: |
         vcpkg install --triplet x64-windows-static \
+            bzip2 \
+            libflac \
             zlib \
             brotli \
             nghttp2 \
@@ -19,7 +24,22 @@ runs:
             libpng \
             libwebp \
             tiff \
-            libjpeg-turbo
+            libjpeg-turbo \
+            libogg \
+            libpsl[libicu] \
+            libtheora \
+            libvorbis \
+            minimp3 \
+            openal-soft \
+            opus \
+            opusfile \
+            directxsdk
+
+        choco install ninja --no-progress
+        
+    - name: Setup Windows MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      if: runner.os == 'Windows'
         
     - name: Setup Ubuntu packages
       if: runner.os == 'Linux'
@@ -66,7 +86,21 @@ runs:
             libnghttp2-dev \
             libbrotli-dev \
             libzstd-dev \
-            zlib1g-dev
+            zlib1g-dev \
+            xvfb \
+            libvorbis-dev \
+            libtheora-dev \
+            libopusfile-dev \
+            libflac-dev \
+            libgtk-3-dev \
+            pandoc \
+            libcurl4-openssl-dev \
+            libenet-dev \
+            pulseaudio \
+            libopenal-dev \
+            libglu-dev \
+            libopenmpt-dev \
+            ninja-build
 
     - name: Setup macOS Environment
       if: runner.os == 'macOS'
@@ -83,29 +117,34 @@ runs:
             webp \
             libtiff \
             libidn2 \
-            jpeg
-            
-    - name: Verify vcpkg installation
-      if: runner.os == 'Windows'
-      shell: pwsh
+            jpeg \
+            ninja
+
+# CMake config
+
+    - name: Configure Release (GCC/MACOS)
+      if: runner.os == 'Linux'
+      shell: bash
       run: |
-        Test-Path C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-        Test-Path C:/vcpkg/installed/x64-windows-static/include/zlib.h
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build Project (Windows)
+    - name: Configure Release (MSVC / MINGW)
       if: runner.os == 'Windows'
-      uses: threeal/cmake-action@v2.1.0
-      with:
-        options: |
-          CMAKE_BUILD_TYPE=Release
-          CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-          VCPKG_TARGET_TRIPLET=x64-windows-static
-        build-args: --config Release
+      shell: bash
+      run: |
+        EXTRA_ARGS=""
+        VCPKG_ROOT_DIR="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+        VCPKG_CMAKE="$VCPKG_ROOT_DIR/scripts/buildsystems/vcpkg.cmake"
 
-    - name: Build Project (Linux/macOS)
-      if: runner.os != 'Windows'
-      uses: threeal/cmake-action@v2.1.0
-      with:
-        options: |
-          CMAKE_BUILD_TYPE=Release
-        build-args: --config Release
+        if [ -f "$VCPKG_CMAKE" ]; then
+          EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$VCPKG_CMAKE -DVCPKG_TARGET_TRIPLET=x64-windows-static"
+          echo "Enabled VCPKG correctly"
+        else
+          echo "No VCPKG config found!"
+        fi
+
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release $EXTRA_ARGS
+        
+    - name: Build
+      shell: bash
+      run: cmake --build build --parallel 4 --config Release
