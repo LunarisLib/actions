@@ -83,7 +83,14 @@ runs:
             webp \
             libtiff \
             libidn2 \
-            jpeg            
+            jpeg
+            
+    - name: Verify vcpkg installation
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Test-Path C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        Test-Path C:/vcpkg/installed/x64-windows-static/include/zlib.h
 
     - name: Build Project (Windows)
       if: runner.os == 'Windows'
